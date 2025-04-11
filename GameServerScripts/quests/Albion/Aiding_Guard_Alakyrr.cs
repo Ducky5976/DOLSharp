@@ -33,6 +33,8 @@ using System.Reflection;
 using DOL.AI.Brain;
 using DOL.Database;
 using DOL.Events;
+using DOL.GS.Finance;
+using DOL.GS.Geometry;
 using DOL.GS.PacketHandler;
 using log4net;
 
@@ -100,15 +102,11 @@ namespace DOL.GS.Quests.Albion
                     log.Warn("Could not find " + GuardAlakyrr.Name + ", creating ...");
                 GuardAlakyrr.GuildName = "Part of " + questTitle + " Quest";
                 GuardAlakyrr.Realm = eRealm.Albion;
-                GuardAlakyrr.CurrentRegionID = 63;
                 GuardAlakyrr.Size = 50;
                 GuardAlakyrr.Level = 30;
                 GuardAlakyrr.MaxSpeedBase = 191;
                 GuardAlakyrr.Faction = FactionMgr.GetFactionByID(0);
-                GuardAlakyrr.X = 28707;
-                GuardAlakyrr.Y = 20147;
-                GuardAlakyrr.Z = 16760;
-                GuardAlakyrr.Heading = 4016;
+                GuardAlakyrr.Position = Position.Create(regionID: 63, x: 28707, y: 20147, z: 16760, heading: 4016);
                 GuardAlakyrr.RespawnInterval = -1;
                 GuardAlakyrr.BodyType = 0;
 
@@ -667,7 +665,8 @@ namespace DOL.GS.Quests.Albion
 
 			m_questPlayer.GainExperience(GameLiving.eXPSource.Quest, 40 + (m_questPlayer.Level - 1) * 4, true);
             long money = Money.GetMoney(0, 0, 0, 7, Util.Random(50));
-			m_questPlayer.AddMoney(money, "You are awarded 7 silver and some copper!");
+			m_questPlayer.AddMoney(Currency.Copper.Mint(money));
+			m_questPlayer.SendSystemMessage("You are awarded 7 silver and some copper!");
             InventoryLogging.LogInventoryAction("(QUEST;" + Name + ")", m_questPlayer, eInventoryActionType.Quest, money);
 
 			GameEventMgr.RemoveHandler(m_questPlayer, GamePlayerEvent.UseSlot, new DOLEventHandler(PlayerUseSlot));

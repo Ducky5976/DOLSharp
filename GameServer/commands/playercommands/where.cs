@@ -18,6 +18,7 @@
  */
 using System;
 using DOL.GS.PacketHandler;
+using DOL.Language;
 
 namespace DOL.GS.Commands
 {
@@ -42,13 +43,13 @@ namespace DOL.GS.Commands
 				GameNPC[] npcs = WorldMgr.GetNPCsByNameFromRegion(name, client.Player.CurrentRegionID, (eRealm) client.Player.Realm);
 				if (npcs == null || npcs.Length <= 0)
 				{
-					targetnpc.SayTo(client.Player, "Sorry, i do not know this person.");
+					targetnpc.SayTo(client.Player, LanguageMgr.GetTranslation(client, "Scripts.Players.Where.Unknown"));
 					return;
 				}
 				GameNPC npc = npcs[0];
-				ushort heading = targetnpc.GetHeading(npc);
-				string directionstring = GetDirectionFromHeading(heading);
-				targetnpc.SayTo(client.Player, eChatLoc.CL_SystemWindow, npc.Name + " is in the " + directionstring);
+				var orientation = targetnpc.Coordinate.GetOrientationTo(npc.Coordinate);
+				string directionstring = LanguageMgr.GetCardinalDirection(client.Account.Language, orientation);
+				targetnpc.SayTo(client.Player, eChatLoc.CL_SystemWindow, LanguageMgr.GetTranslation(client, "Scripts.Players.Where.Found", npc.Name, directionstring));
 				targetnpc.TurnTo(npc, 10000);
 				targetnpc.Emote(eEmote.Point);
 			}
@@ -143,29 +144,6 @@ namespace DOL.GS.Commands
 				return true;
 			}
 			return false;
-		}
-
-		public string GetDirectionFromHeading(ushort heading)
-		{
-			if (heading < 0)
-				heading += 4096;
-			if (heading >= 3840 || heading <= 256)
-				return "South";
-			else if (heading > 256 && heading < 768)
-				return "South West";
-			else if (heading >= 768 && heading <= 1280)
-				return "West";
-			else if (heading > 1280 && heading < 1792)
-				return "North West";
-			else if (heading >= 1792 && heading <= 2304)
-				return "North";
-			else if (heading > 2304 && heading < 2816)
-				return "North East";
-			else if (heading >= 2816 && heading <= 3328)
-				return "East";
-			else if (heading > 3328 && heading < 3840)
-				return "South East";
-			return "";
 		}
 	}
 }

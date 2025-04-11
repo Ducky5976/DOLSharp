@@ -18,11 +18,9 @@
  */
 
 using DOL.AI.Brain;
-using DOL.GS.PlayerClass;
 using DOL.GS.Quests;
 using DOL.GS.ServerProperties;
 using DOL.Language;
-using System;
 
 namespace DOL.GS.Keeps
 {
@@ -37,7 +35,7 @@ namespace DOL.GS.Keeps
 				return false;
 
 			if (Component == null)
-				SayTo(player, "Greetings, " + player.Name + ". We have put out the call far and wide for heroes such as yourself to aid us in our ongoing struggle. It warms my heart good to to see a great " + player.CharacterClass.Name + " such as yourself willing to lay their life on the line in defence of the [realm].");
+				SayTo(player, "Greetings, " + player.Name + ". We have put out the call far and wide for heroes such as yourself to aid us in our ongoing struggle. It warms my heart good to to see a great " + player.Salutation + " such as yourself willing to lay their life on the line in defence of the [realm].");
 			else SayTo(player, "Hail and well met, " + player.Name + "! As the leader of our forces, I am calling upon our finest warriors to aid in the vanquishing of our enemies. Do you wish to do your duty in defence of our [realm]?");
 			return true;
 		}
@@ -259,12 +257,12 @@ namespace DOL.GS.Keeps
 			return true;
 		}
 
-		protected override ICharacterClass GetClass()
+		protected override CharacterClass GetClass()
 		{
-			if (ModelRealm == eRealm.Albion) return new ClassArmsman();
-			else if (ModelRealm == eRealm.Midgard) return new ClassWarrior();
-			else if (ModelRealm == eRealm.Hibernia) return new ClassHero();
-			return new DefaultCharacterClass();
+			if (ModelRealm == eRealm.Albion) return CharacterClass.Armsman;
+			else if (ModelRealm == eRealm.Midgard) return CharacterClass.Warrior;
+			else if (ModelRealm == eRealm.Hibernia) return CharacterClass.Hero;
+			return CharacterClass.None;
 		}
 
 		protected override void SetBlockEvadeParryChance()
@@ -281,21 +279,10 @@ namespace DOL.GS.Keeps
 			}
 		}
 
-		protected override void SetRespawnTime()
-		{
-			if (Realm == eRealm.None && (GameServer.Instance.Configuration.ServerType == eGameServerType.GST_PvE ||
-			GameServer.Instance.Configuration.ServerType == eGameServerType.GST_PvP))
-			{
-				// In PvE & PvP servers, lords are really just mobs farmed for seals.
-				int iVariance = 1000 * Math.Abs(ServerProperties.Properties.GUARD_RESPAWN_VARIANCE);
-				int iRespawn = 60 * ((Math.Abs(ServerProperties.Properties.GUARD_RESPAWN) * 1000) +
-					(Util.Random(-iVariance, iVariance)));
-
-				RespawnInterval = (iRespawn > 1000) ? iRespawn : 1000; // Make sure we don't end up with an impossibly low respawn interval.
-			}
-			else
-				RespawnInterval = 10000; // 10 seconds
-		}
+        protected override void SetRespawnTime()
+        {
+            RespawnInterval = 120000;
+        }
 
 		protected override void SetAggression()
 		{

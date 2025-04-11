@@ -35,6 +35,7 @@ using DOL.GS.Spells;
 using DOL.GS.Styles;
 using DOL.Language;
 using DOL.GS.RealmAbilities;
+using DOL.GS.Geometry;
 
 namespace DOL.GS
 {
@@ -932,33 +933,6 @@ namespace DOL.GS
 		{
 			// by default npc's can start casting spells while in combat
 			return true;
-		}
-
-
-		/// <summary>
-		/// Calculate how fast this living can cast a given spell
-		/// </summary>
-		/// <param name="spell"></param>
-		/// <returns></returns>
-		public virtual int CalculateCastingTime(SpellLine line, Spell spell)
-		{
-			int ticks = spell.CastTime;
-
-			if (spell.InstrumentRequirement != 0 ||
-			    line.KeyName == GlobalSpellsLines.Item_Spells ||
-			    line.KeyName.StartsWith(GlobalSpellsLines.Champion_Lines_StartWith))
-			{
-				return ticks;
-			}
-
-
-			double percent = DexterityCastTimeReduction;
-
-			ticks = (int)(ticks * Math.Max(CastingSpeedReductionCap, percent));
-			if (ticks < MinimumCastingSpeed)
-				ticks = MinimumCastingSpeed;
-
-			return ticks;
 		}
 
 		/// <summary>
@@ -1934,10 +1908,9 @@ namespace DOL.GS
 
 							// blocked for another player
 							if (ad.Target is GamePlayer)
-							{
 								((GamePlayer)ad.Target).Out.SendMessage(string.Format(LanguageMgr.GetTranslation(((GamePlayer)ad.Target).Client.Account.Language, "GameLiving.AttackData.YouBlock"), ad.Attacker.GetName(0, false), target.GetName(0, false)), eChatType.CT_Missed, eChatLoc.CL_SystemWindow);
-								((GamePlayer)ad.Target).Stealth(false);
-							}
+
+							ad.Target.Stealth(false);
 						}
 						else if (ad.Target is GamePlayer)
 						{
@@ -1991,8 +1964,8 @@ namespace DOL.GS
 						bool preCheck = false;
 						if (ad.Target is GamePlayer) //only start if we are behind the player
 						{
-							float angle = ad.Target.GetAngle( ad.Attacker );
-							if (angle >= 150 && angle < 210) preCheck = true;
+							var angle = ad.Target.GetAngleTo(ad.Attacker.Coordinate);
+							if (angle.InDegrees >= 150 && angle.InDegrees < 210) preCheck = true;
 						}
 						else preCheck = true;
 
@@ -2060,9 +2033,8 @@ namespace DOL.GS
 				{
 					GameLiving owner_living = brain.GetLivingOwner();
 					excludes.Add(owner_living);
-					if (owner_living != null && owner_living is GamePlayer && owner_living.ControlledBrain != null && ad.Target == owner_living.ControlledBrain.Body)
+					if (owner_living is GamePlayer owner && ad.Target == owner.ControlledBody)
 					{
-						GamePlayer owner = owner_living as GamePlayer;
 						switch (ad.AttackResult)
 						{
 							case eAttackResult.Blocked:
@@ -2933,8 +2905,7 @@ namespace DOL.GS
 				}
 
 				// unstealth before attack animation
-				if (owner is GamePlayer)
-					((GamePlayer)owner).Stealth(false);
+				owner.Stealth(false);
 
 				//Show the animation
 				if (mainHandAD.AttackResult != eAttackResult.HitUnstyled && mainHandAD.AttackResult != eAttackResult.HitStyle && leftHandAD != null)
@@ -3751,8 +3722,7 @@ namespace DOL.GS
 					if (this is GamePlayer) ((GamePlayer)this).Out.SendMessage(LanguageMgr.GetTranslation(((GamePlayer)this).Client.Account.Language, "GameLiving.CalculateEnemyAttackResult.BlowAbsorbed"), eChatType.CT_SpellResisted, eChatLoc.CL_SystemWindow);
 					if (ad.Attacker is GamePlayer) ((GamePlayer)ad.Attacker).Out.SendMessage(LanguageMgr.GetTranslation(((GamePlayer)ad.Attacker).Client.Account.Language, "GameLiving.CalculateEnemyAttackResult.StrikeAbsorbed"), eChatType.CT_SpellResisted, eChatLoc.CL_SystemWindow);
 					bladeturn.Cancel(false);
-					if (this is GamePlayer)
-						((GamePlayer)this).Stealth(false);
+					Stealth(false);
 					return eAttackResult.Missed;
 				}
 			}
@@ -4148,6 +4118,8 @@ namespace DOL.GS
 			}
 
 			Health -= damageAmount + criticalAmount;
+
+			Stealth(false);
 
 			if (!IsAlive)
 			{
@@ -5635,25 +5607,6 @@ namespace DOL.GS
 		/// The base maximum speed of this living
 		/// </summary>
 		protected short m_maxSpeedBase;
-		/// <summary>
-		/// Holds the Living's Coordinate inside the current Region
-		/// </summary>
-		protected Point3D m_groundTarget;
-
-		/// <summary>
-		/// Gets the current direction the Object is facing
-		/// </summary>
-		public override ushort Heading
-		{
-			get { return base.Heading; }
-			set
-			{
-				ushort oldHeading = base.Heading;
-				base.Heading = value;
-				if (base.Heading != oldHeading)
-					UpdateTickSpeed();
-			}
-		}
 
 		private bool m_fixedSpeed = false;
 
@@ -5666,21 +5619,11 @@ namespace DOL.GS
 			set { m_fixedSpeed = value; }
 		}
 
-		/// <summary>
-		/// Gets or sets the current speed of this living
-		/// </summary>
-		public virtual short CurrentSpeed
-		{
-			get
-			{
-				return m_currentSpeed;
-			}
-			set
-			{
-				m_currentSpeed = value;
-				UpdateTickSpeed();
-			}
-		}
+        public virtual short CurrentSpeed
+        {
+            get => Motion.Speed;
+            set => Motion = Geometry.Motion.Create(Position, Motion.Destination, value);
+        }
 
 		/// <summary>
 		/// Gets the maxspeed of this living
@@ -5719,28 +5662,25 @@ namespace DOL.GS
 				m_targetObjectWeakReference.Target = value;
 			}
 		}
+
+        public virtual void TurnTo(Coordinate coordinate, bool sendUpdate = true)
+            => Orientation = Coordinate.GetOrientationTo(coordinate);
+
 		public virtual bool IsSitting
 		{
 			get { return false; }
 			set { }
 		}
-		/// <summary>
-		/// Gets the Living's ground-target Coordinate inside the current Region
-		/// </summary>
-		public virtual Point3D GroundTarget
-		{
-			get { return m_groundTarget; }
-		}
 
-		/// <summary>
-		/// Sets the Living's ground-target Coordinates inside the current Region
-		/// </summary>
-		public virtual void SetGroundTarget(int groundX, int groundY, int groundZ)
-		{
-			m_groundTarget.X = groundX;
-			m_groundTarget.Y = groundY;
-			m_groundTarget.Z = groundZ;
-		}
+        [Obsolete("Use GroundTargetPosition instead!")]
+        public virtual Point3D GroundTarget
+            => GroundTargetPosition.Coordinate.ToPoint3D();
+
+        [Obsolete("Use GroundTargetPosition_set instead!")]
+        public virtual void SetGroundTarget(int groundX, int groundY, int groundZ)
+            => GroundTargetPosition = Position.Create(Position.RegionID, groundX, groundY, groundZ);
+
+        public virtual Position GroundTargetPosition { get; set; } = Position.Nowhere;
 
 		/// <summary>
 		/// Gets or Sets the current level of the Object
@@ -5782,39 +5722,6 @@ namespace DOL.GS
 
 		#endregion
 		#region Movement
-		/// <summary>
-		/// The tick speed in X direction.
-		/// </summary>
-		public double TickSpeedX { get; protected set; }
-
-		/// <summary>
-		/// The tick speed in Y direction.
-		/// </summary>
-		public double TickSpeedY { get; protected set; }
-
-		/// <summary>
-		/// The tick speed in Z direction.
-		/// </summary>
-		public double TickSpeedZ { get; protected set; }
-
-		/// <summary>
-		/// Updates tick speed for this living.
-		/// </summary>
-		protected virtual void UpdateTickSpeed()
-		{
-			int speed = CurrentSpeed;
-
-			if (speed == 0)
-				SetTickSpeed(0, 0, 0);
-			else
-			{
-				// Living will move in the direction it is currently heading.
-
-				double heading = Heading * HEADING_TO_RADIAN;
-				SetTickSpeed(-Math.Sin(heading), Math.Cos(heading), 0, speed);
-			}
-		}
-
 		public virtual void UpdateHealthManaEndu()
 		{
 			if (IsAlive)
@@ -5830,121 +5737,55 @@ namespace DOL.GS
 			}
 		}
 
-		/// <summary>
-		/// Set the tick speed, that is the distance covered in one tick.
-		/// </summary>
-		/// <param name="dx"></param>
-		/// <param name="dy"></param>
-		/// <param name="dz"></param>
-		protected void SetTickSpeed(double dx, double dy, double dz)
-		{
-			TickSpeedX = dx;
-			TickSpeedY = dy;
-			TickSpeedZ = dz;
-		}
+		public int MovementStartTick
+            => Motion.StartTimeInMilliSeconds;
 
-		/// <summary>
-		/// Set the tick speed, that is the distance covered in one tick.
-		/// </summary>
-		/// <param name="dx"></param>
-		/// <param name="dy"></param>
-		/// <param name="dz"></param>
-		/// <param name="speed"></param>
-		protected void SetTickSpeed(double dx, double dy, double dz, int speed)
-		{
-			double tickSpeed = speed * 0.001;
-			SetTickSpeed(dx * tickSpeed, dy * tickSpeed, dz * tickSpeed);
-		}
+        public virtual bool IsMoving => CurrentSpeed != 0;
 
-		/// <summary>
-		/// The tick at which the movement started.
-		/// </summary>
-		public int MovementStartTick { get; set; }
+        public override Position Position
+        {
+            get => Motion.CurrentPosition;
+            set => Motion = Motion.Create(value, Motion.Destination, Motion.Speed);
+        }
 
-		/// <summary>
-		/// Elapsed ticks since movement started.
-		/// </summary>
-		protected int MovementElapsedTicks
-		{
-			get { return Environment.TickCount - MovementStartTick; }
-		}
+        protected virtual Motion Motion { get; set; } = new Motion();
 
-		/// <summary>
-		/// True if the living is moving, else false.
-		/// </summary>
-		public virtual bool IsMoving
-		{
-			get { return m_currentSpeed != 0; }
-		}
+        [Obsolete("Use .Position.X instead!")]
+        public override int X
+        {
+            set => Position = Motion.Start.With(x: value);
+        }
 
-		/// <summary>
-		/// The current X position of this living.
-		/// </summary>
-		public override int X
-		{
-			get
-			{
-				return (IsMoving)
-					? (int)(base.X + MovementElapsedTicks * TickSpeedX)
-					: base.X;
-			}
-			set
-			{
-				base.X = value;
-			}
-		}
+        [Obsolete("Use .Position.Y instead!")]
+        public override int Y
+        {
+            set => Position = Motion.Start.With(y: value);
+        }
 
-		/// <summary>
-		/// The current Y position of this living.
-		/// </summary>
-		public override int Y
-		{
-			get
-			{
-				return (IsMoving)
-					? (int)(base.Y + MovementElapsedTicks * TickSpeedY)
-					: base.Y;
-			}
-			set
-			{
-				base.Y = value;
-			}
-		}
+        [Obsolete("Use .Position.Z instead!")]
+        public override int Z
+        {
+            set => Position = Motion.Start.With(z: value);
+        }
 
-		/// <summary>
-		/// The current Z position of this living.
-		/// </summary>
-		public override int Z
-		{
-			get
-			{
-				return (IsMoving)
-					? (int)(base.Z + MovementElapsedTicks * TickSpeedZ)
-					: base.Z;
-			}
-			set
-			{
-				base.Z = value;
-			}
-		}
+        public override Angle Orientation 
+        {
+            get => Position.Orientation;
+            set => Position = Motion.Start.With(orientation: value);
+        }
 
+        public override bool MoveTo(Position position)
+        {
+            if (position.RegionID != CurrentRegionID) CancelAllConcentrationEffects();
+            return base.MoveTo(position);
+        }
+		#endregion
+		#region Stealth
 		/// <summary>
-		/// Moves the item from one spot to another spot, possible even
-		/// over region boundaries
+		/// Is this NPC able to stealth?
 		/// </summary>
-		/// <param name="regionID">new regionid</param>
-		/// <param name="x">new x</param>
-		/// <param name="y">new y</param>
-		/// <param name="z">new z</param>
-		/// <param name="heading">new heading</param>
-		/// <returns>true if moved</returns>
-		public override bool MoveTo(ushort regionID, int x, int y, int z, ushort heading)
-		{
-			if (regionID != CurrentRegionID)
-				CancelAllConcentrationEffects();
-
-			return base.MoveTo(regionID, x, y, z, heading);
-		}
+		public virtual bool CanStealth
+		{ get; set; }
 
 		/// <summary>
 		/// The stealth state of this living
@@ -5952,6 +5793,16 @@ namespace DOL.GS
 		public virtual bool IsStealthed
 		{
 			get { return false; }
+		}
+
+		/// <summary>
+		/// Set the NPC to stealth or unstealth
+		/// </summary>
+		/// <param name="goStealth">True to stealth, false to unstealth</param>
+		public virtual void Stealth(bool goStealth)
+		{
+			if (goStealth)
+				log.Warn($"Stealth(): {GetType().FullName} cannot be stealthed.  You probably need to override Stealth() for this class");
 		}
 
 		#endregion
@@ -6460,8 +6311,6 @@ namespace DOL.GS
 			return list;
 		}
 
-		#endregion Abilities
-
 		/// <summary>
 		/// Checks if living has ability to use items of this type
 		/// </summary>
@@ -6471,6 +6320,8 @@ namespace DOL.GS
 		{
 			return GameServer.ServerRules.CheckAbilityToUseItem(this, item);
 		}
+		#endregion
+		#region Skills
 
 		/// <summary>
 		/// Table of skills currently disabled
@@ -6582,7 +6433,7 @@ namespace DOL.GS
 					m_disabledSkills.Remove(key);
 			}
 		}
-
+		#endregion
 		#region Broadcasting utils
 
 		/// <summary>
@@ -6603,7 +6454,6 @@ namespace DOL.GS
 		}
 		
 		#endregion
-		
 		#region Region
 
 		/// <summary>
@@ -6897,6 +6747,19 @@ namespace DOL.GS
 			}
 		}
 
+		/// <summary>
+		/// Get the controlled pet's body, or null if not present.  Always uses m_controlledBrain[0]
+		/// </summary>
+		public virtual GameLiving ControlledBody
+		{
+			get
+			{
+				if (m_controlledBrain != null && m_controlledBrain[0] != null && m_controlledBrain[0].Body is GameLiving body)
+					return body;
+				return null;
+			}
+		}
+
 		public virtual bool IsControlledNPC(GameNPC npc)
 		{
 			if (npc == null)
@@ -6976,7 +6839,6 @@ namespace DOL.GS
 		{
 			m_guildName = string.Empty;
 			m_targetObjectWeakReference = new WeakRef(null);
-			m_groundTarget = new Point3D(0, 0, 0);
 
 			//Set all combat properties
 			m_activeWeaponSlot = eActiveWeaponSlot.Standard;
@@ -6992,6 +6854,8 @@ namespace DOL.GS
 			m_mana = 1;
 			m_endurance = 1;
 			m_maxEndurance = 1;
+
+			CanStealth = false;
 		}
 	}
 }

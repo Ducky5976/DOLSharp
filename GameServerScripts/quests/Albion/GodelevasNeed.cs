@@ -33,6 +33,8 @@ using System.Reflection;
 using DOL.AI.Brain;
 using DOL.Database;
 using DOL.Events;
+using DOL.GS.Finance;
+using DOL.GS.Geometry;
 using DOL.GS.PacketHandler;
 using log4net;
 /* I suggest you declare yourself some namespaces for your quests
@@ -79,7 +81,7 @@ namespace DOL.GS.Quests.Albion
 
 		private static ItemTemplate reedBracer = null;
 
-		private static GameLocation cotswoldVillageBridge = new GameLocation("Bridge Location", 1, 557671, 512396, 1876);
+        private static Coordinate cotswoldBridgeLocation = Coordinate.Create(x: 557671, y: 512396, z: 1876);
 
 		/* We need to define the constructors from the base class here, else there might be problems
 		 * when loading this quest...
@@ -154,7 +156,6 @@ namespace DOL.GS.Quests.Albion
 					log.Warn("Could not find " + godelevaDowden.Name + ", creating him ...");
 				godelevaDowden.GuildName = "Part of " + questTitle + " Quest";
 				godelevaDowden.Realm = eRealm.Albion;
-				godelevaDowden.CurrentRegionID = 1;
 
 				GameNpcInventoryTemplate template = new GameNpcInventoryTemplate();
 				template.AddNPCEquipment(eInventorySlot.FeetArmor, 138);
@@ -165,10 +166,7 @@ namespace DOL.GS.Quests.Albion
 
 				godelevaDowden.Size = 48;
 				godelevaDowden.Level = 40;
-				godelevaDowden.X = 559528;
-				godelevaDowden.Y = 510953;
-				godelevaDowden.Z = 2488;
-				godelevaDowden.Heading = 1217;
+                godelevaDowden.Position = Position.Create(regionID: 1, x: 559528, y: 510953, z: 2488, heading: 1217);
 
 				//You don't have to store the created mob in the db if you don't want,
 				//it will be recreated each time it is not found, just comment the following
@@ -478,7 +476,7 @@ namespace DOL.GS.Quests.Albion
 				InventoryItem item = player.Inventory.GetItem((eInventorySlot)uArgs.Slot);
 				if (item != null && item.Id_nb == woodenBucket.Id_nb)
 				{
-					if (player.IsWithinRadius(cotswoldVillageBridge, 500))
+					if (player.Coordinate.DistanceTo(cotswoldBridgeLocation) <= 500)
 					{
 						SendSystemMessage(player, "You use the wooden bucket and scoop up some fresh river water.");
 
@@ -650,7 +648,8 @@ namespace DOL.GS.Quests.Albion
 
 			m_questPlayer.GainExperience(GameLiving.eXPSource.Quest, 40 + (m_questPlayer.Level - 1) * 4, true);
             long money = Money.GetMoney(0, 0, 0, 7, Util.Random(50));
-			m_questPlayer.AddMoney(money, "You are awarded 7 silver and some copper!");
+			m_questPlayer.AddMoney(Currency.Copper.Mint(money));
+			m_questPlayer.SendSystemMessage(string.Format("You are awarded 7 silver and some copper!", Money.GetString(money)));
             InventoryLogging.LogInventoryAction("(QUEST;" + Name + ")", m_questPlayer, eInventoryActionType.Quest, money);
 
 			GameEventMgr.RemoveHandler(m_questPlayer, GamePlayerEvent.UseSlot, new DOLEventHandler(PlayerUseSlot));

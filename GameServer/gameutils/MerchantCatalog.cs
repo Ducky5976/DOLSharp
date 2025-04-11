@@ -29,7 +29,7 @@ namespace DOL.GS.Profession
         public byte SlotPosition { get; } = 0;
         public byte Page { get; } = 0;
         public ItemTemplate Item { get; }
-        public long CurrencyAmount {get; } = 0;
+        public long CurrencyAmount { get; } = 0;
 
         public MerchantCatalogEntry(byte slotPosition, byte page, ItemTemplate itemTemplate, long currencyAmount)
         {
@@ -49,7 +49,6 @@ namespace DOL.GS.Profession
 
         public byte Number { get; }
         public Currency Currency { get; private set; } = Currency.Copper;
-        public ItemTemplate CurrencyItem => Currency is ItemCurrency itemCurrency ? itemCurrency.Item : null;
 
         public MerchantCatalogPage(byte number)
         {
@@ -141,10 +140,7 @@ namespace DOL.GS.Profession
                 var page = catalog.GetPage(dbMerchantItem.PageNumber);
                 if (dbMerchantItem.SlotPosition == currencySlotPosition)
                 {
-                    var currencyId = (byte)dbMerchantItem.Price;
-                    var itemTemplateId = dbMerchantItem.ItemTemplateID;
-                    var pageCurrency = Currency.Create(currencyId, itemTemplateId);
-                    page.SetCurrency(pageCurrency);
+                    page.SetCurrency(GetCurrencyFrom(dbMerchantItem));
                 }
                 var itemTemplate = GameServer.Database.FindObjectByKey<ItemTemplate>(dbMerchantItem.ItemTemplateID);
                 if (itemTemplate == null) continue;
@@ -153,6 +149,23 @@ namespace DOL.GS.Profession
             }
             catalog.ItemListId = itemListId;
             return catalog;
+        }
+
+        private static Currency GetCurrencyFrom(MerchantItem merchantItem)
+        {
+            var currencyId = (byte)merchantItem.Price;
+            var itemCurrencyId = merchantItem.ItemTemplateID;
+            switch (currencyId)
+            {
+                case 1: return Currency.Copper;
+                case 2: 
+                    var itemTemplate = GameServer.Database.FindObjectByKey<ItemTemplate>(itemCurrencyId);
+                    if (itemTemplate == null) return Currency.Item(itemCurrencyId, $"units of {itemCurrencyId}");
+                    else return Currency.Item(itemCurrencyId, itemTemplate.Name);
+                case 3: return Currency.BountyPoints;
+                case 4: return Currency.Mithril;
+                default: throw new System.NotImplementedException($"Currency with id {currencyId} is not implemented.");
+            }
         }
 
         public IEnumerable<MerchantCatalogEntry> GetAllEntries()

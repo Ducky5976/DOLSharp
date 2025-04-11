@@ -35,6 +35,8 @@ using System.Reflection;
 using DOL.AI.Brain;
 using DOL.Database;
 using DOL.Events;
+using DOL.GS.Finance;
+using DOL.GS.Geometry;
 using DOL.GS.PacketHandler;
 using log4net;
 /* I suggest you declare yourself some namespaces for your quests
@@ -161,14 +163,10 @@ namespace DOL.GS.Quests.Midgard
 				queenVuuna = new GameNPC();
 
 				queenVuuna.Name = "Queen Vuuna";
-				queenVuuna.X = GameLocation.ConvertLocalXToGlobalX(47071, 100);
-				queenVuuna.Y = GameLocation.ConvertLocalYToGlobalY(38934, 100);
-				queenVuuna.Z = 4747;
-				queenVuuna.Heading = 50;
+                queenVuuna.Position = Position.CreateInZone(zoneID: 100, x: 47071, y: 38934, z: 4747, heading: 50);
 				queenVuuna.Model = 678;
 				queenVuuna.GuildName = "Part of " + questTitle + " Quest";
 				queenVuuna.Realm = eRealm.None;
-				queenVuuna.CurrentRegionID = 100;
 				queenVuuna.Size = 49;
 				queenVuuna.Level = 5;
 
@@ -210,19 +208,14 @@ namespace DOL.GS.Quests.Midgard
 					askefruerSorceress[i].Name = "askefruer sorceress";
 					askefruerSorceress[i].GuildName = "Part of " + questTitle + " Quest";
 					askefruerSorceress[i].Realm = eRealm.None;
-					askefruerSorceress[i].CurrentRegionID = 100;
 					askefruerSorceress[i].Size = 35;
 					askefruerSorceress[i].Level = 5;
-					askefruerSorceress[i].X = queenVuuna.X + Util.Random(30, 150);
-					askefruerSorceress[i].Y = queenVuuna.Y + Util.Random(30, 150);
-					askefruerSorceress[i].Z = queenVuuna.Z;
+					askefruerSorceress[i].Position = queenVuuna.Position.With(heading: 93) + Vector.Create(x:  Util.Random(30, 150), y:  Util.Random(30, 150));
 
 					StandardMobBrain brain = new StandardMobBrain();
 					brain.AggroLevel = 30;
 					brain.AggroRange = 600;
 					askefruerSorceress[i].SetOwnBrain(brain);
-
-					askefruerSorceress[i].Heading = 93;
 
 					//You don't have to store the created mob in the db if you don't want,
 					//it will be recreated each time it is not found, just comment the following
@@ -832,6 +825,7 @@ namespace DOL.GS.Quests.Midgard
 
 		protected void CreateBriediClone()
 		{
+            var briediPosition = Position.Create(regionID: 100, x: 45394 + valeOfMularn.Offset.X, y: 39768 + valeOfMularn.Offset.Y, z: 4709, heading: 107);
 			GameNpcInventoryTemplate template;
 			if (briediClone == null)
 			{
@@ -844,10 +838,7 @@ namespace DOL.GS.Quests.Midgard
 
 				briediClone.Size = 50;
 				briediClone.Level = 45;
-				briediClone.X = GameLocation.ConvertLocalXToGlobalX(45394, 100);
-				briediClone.Y = GameLocation.ConvertLocalYToGlobalY(39768, 100);
-				briediClone.Z = 4709;
-				briediClone.Heading = 107;
+                briediClone.Position = briediPosition;
 
 				template = new GameNpcInventoryTemplate();
 				template.AddNPCEquipment(eInventorySlot.TorsoArmor, 348);
@@ -878,7 +869,7 @@ namespace DOL.GS.Quests.Midgard
 			}
 			else
 			{
-				briediClone.MoveTo(100, GameLocation.ConvertLocalXToGlobalX(45394, 100), GameLocation.ConvertLocalYToGlobalY(39768, 100), 4709, 107);
+				briediClone.MoveTo(briediPosition);
 			}
 
 
@@ -896,15 +887,9 @@ namespace DOL.GS.Quests.Midgard
 
 				recruits[i].GuildName = "Part of " + questTitle + " Quest";
 				recruits[i].Realm = eRealm.Midgard;
-				recruits[i].CurrentRegionID = briediClone.CurrentRegionID;
-
 				recruits[i].Size = 50;
 				recruits[i].Level = 6;
-				recruits[i].X = briediClone.X + Util.Random(-150, 150);
-				recruits[i].Y = briediClone.Y + Util.Random(-150, 150);
-
-				recruits[i].Z = briediClone.Z;
-				recruits[i].Heading = 187;
+				recruits[i].Position = briediClone.Position.With(heading: 187) + Vector.Create(x: Util.Random(-150, 150), y: Util.Random(-150, 150));
 
 				StandardMobBrain brain = new StandardMobBrain();
 				brain.AggroLevel = 0;
@@ -1207,7 +1192,8 @@ namespace DOL.GS.Quests.Midgard
 			//Give reward to player here ...              
 			m_questPlayer.GainExperience(GameLiving.eXPSource.Quest, 1012, true);
             long money = Money.GetMoney(0, 0, 0, 9, Util.Random(50));
-			m_questPlayer.AddMoney(money, "You recieve {0} as a reward.");
+			m_questPlayer.AddMoney(Currency.Copper.Mint(money));
+			m_questPlayer.SendSystemMessage(string.Format("You recieve {0} as a reward.", Money.GetString(money)));
             InventoryLogging.LogInventoryAction("(QUEST;" + Name + ")", m_questPlayer, eInventoryActionType.Quest, money);
 			if (m_questPlayer.HasAbilityToUseItem(recruitsGauntlets))
 			{

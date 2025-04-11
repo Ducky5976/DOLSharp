@@ -22,6 +22,7 @@ using System.Reflection;
 using DOL.GS.PacketHandler;
 using DOL.Events;
 using log4net;
+using DOL.GS.Finance;
 
 namespace DOL.GS.Keeps
 {
@@ -228,20 +229,22 @@ namespace DOL.GS.Keeps
 			{
 				case 1:
 					{
-						if (!player.RemoveMoney(Gold * 100 * 100, "You buy " + this.GetName(1, false) + "."))
+						if (!player.RemoveMoney(Currency.Copper.Mint(Gold * 100 * 100)))
 						{
                             InventoryLogging.LogInventoryAction(player, "(keep)", eInventoryActionType.Merchant, Gold * 10000);
 							player.Out.SendMessage("You dont have enough money!", eChatType.CT_Merchant, eChatLoc.CL_SystemWindow);
 							return;
 						}
+						player.SendSystemMessage("You buy " + this.GetName(1, false) + ".");
 					} break;
 				case 2:
 					{
-						if (!player.RemoveBountyPoints(Gold, "You buy " + this.GetName(1, false) + "."))
+						if (!player.RemoveMoney(Currency.BountyPoints.Mint(Gold)))
 						{
 							player.Out.SendMessage("You dont have enough bounty point!", eChatType.CT_Merchant, eChatLoc.CL_SystemWindow);
 							return;
 						}
+						player.SendSystemMessage("You buy " + this.GetName(1, false) + ".");
 					} break;
 				case 3:
 					{
@@ -267,15 +270,11 @@ namespace DOL.GS.Keeps
 			if (hookPointObj == null) return;
 			//use default value so no need to load
 			//hookPointObj.LoadFromDatabase(this.ObjectTemplate);
-			hookPointObj.CurrentRegion = player.CurrentRegion;
 			hookPointObj.Realm = hookpoint.Component.Keep.Realm;
 
 			if (hookPointObj is GameSiegeWeapon)
 				((GameSiegeWeapon)hookPointObj).EnableToMove = false;
-			hookPointObj.X = hookpoint.X;
-			hookPointObj.Y = hookpoint.Y;
-			hookPointObj.Z = hookpoint.Z;
-			hookPointObj.Heading = hookpoint.Heading;
+			hookPointObj.Position = hookpoint.Position;
 
 			if (hookPointObj is GameSiegeWeapon)
 				(hookPointObj as GameSiegeWeapon).HookPoint = hookpoint;
@@ -315,16 +314,12 @@ namespace DOL.GS.Keeps
 
 			//use default value so no need to load
 			//hookPointObj.LoadFromDatabase(this.ObjectTemplate);
-			hookPointObj.CurrentRegion = hookpoint.Component.CurrentRegion;
 			hookPointObj.Realm = hookpoint.Component.Keep.Realm;
 
 			if (hookPointObj is GameSiegeWeapon)
 				((GameSiegeWeapon)hookPointObj).EnableToMove = false;
 
-			hookPointObj.X = hookpoint.X;
-			hookPointObj.Y = hookpoint.Y;
-			hookPointObj.Z = hookpoint.Z;
-			hookPointObj.Heading = hookpoint.Heading;
+			hookPointObj.Position = hookpoint.Position;
 
 			if (hookPointObj is GameSiegeWeapon)
 				(hookPointObj as GameSiegeWeapon).HookPoint = hookpoint;

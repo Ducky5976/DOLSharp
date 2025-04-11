@@ -54,10 +54,10 @@ namespace DOL.GS.PacketHandler
 			using (GSTCPPacketOut pak = new GSTCPPacketOut(GetPacketCode(eServerPackets.PositionAndObjectID)))
 			{
 				pak.WriteShort((ushort)m_gameClient.Player.ObjectID); //This is the player's objectid not Sessionid!!!
-				pak.WriteShort((ushort)m_gameClient.Player.Z);
-				pak.WriteInt((uint)m_gameClient.Player.X);
-				pak.WriteInt((uint)m_gameClient.Player.Y);
-				pak.WriteShort(m_gameClient.Player.Heading);
+				pak.WriteShort((ushort)m_gameClient.Player.Position.Z);
+				pak.WriteInt((uint)m_gameClient.Player.Position.X);
+				pak.WriteInt((uint)m_gameClient.Player.Position.Y);
+				pak.WriteShort(m_gameClient.Player.Orientation.InHeading);
 	
 				int flags = 0;
 				if (m_gameClient.Player.CurrentZone.IsDivingEnabled)
@@ -67,8 +67,8 @@ namespace DOL.GS.PacketHandler
 				pak.WriteByte(0x00);	//TODO Unknown
 				Zone zone = m_gameClient.Player.CurrentZone;
 				if (zone == null) return;
-				pak.WriteShort((ushort)(zone.XOffset / 0x2000));
-				pak.WriteShort((ushort)(zone.YOffset / 0x2000));
+				pak.WriteShort((ushort)(zone.Offset.X / 0x2000));
+				pak.WriteShort((ushort)(zone.Offset.Y / 0x2000));
 				//Dinberg - Changing to allow instances...
 				pak.WriteShort(m_gameClient.Player.CurrentRegion.Skin);
 				pak.WriteShort(0x00); //TODO: unknown, new in 1.71
@@ -90,10 +90,10 @@ namespace DOL.GS.PacketHandler
 				if (obj is GameStaticItem)
 					pak.WriteShort((ushort)(obj as GameStaticItem).Emblem);
 				else pak.WriteShort(0);
-				pak.WriteShort(obj.Heading);
-				pak.WriteShort((ushort)obj.Z);
-				pak.WriteInt((uint)obj.X);
-				pak.WriteInt((uint)obj.Y);
+				pak.WriteShort(obj.Orientation.InHeading);
+				pak.WriteShort((ushort)obj.Position.Z);
+				pak.WriteInt((uint)obj.Position.X);
+				pak.WriteInt((uint)obj.Position.Y);
 				int flag = ((byte)obj.Realm & 3) << 4;
 				ushort model = obj.Model;
 				if (obj.IsUnderwater)
@@ -172,22 +172,22 @@ namespace DOL.GS.PacketHandler
 				ushort speedZ = 0;
 				if (npc == null)
 					return;
-				if (!npc.IsAtTargetPosition)
+				if (!npc.IsAtTargetLocation)
 				{
 					speed = npc.CurrentSpeed;
-					speedZ = (ushort)npc.TickSpeedZ;
+					speedZ = (ushort)npc.ZSpeedFactor;
 				}
 				pak.WriteShort((ushort)npc.ObjectID);
 				pak.WriteShort((ushort)(speed));
-				pak.WriteShort(npc.Heading);
-				pak.WriteShort((ushort)npc.Z);
-				pak.WriteInt((uint)npc.X);
-				pak.WriteInt((uint)npc.Y);
+				pak.WriteShort(npc.Orientation.InHeading);
+				pak.WriteShort((ushort)npc.Position.Z);
+				pak.WriteInt((uint)npc.Position.X);
+				pak.WriteInt((uint)npc.Position.Y);
 				pak.WriteShort(speedZ);
 				pak.WriteShort(npc.Model);
 				pak.WriteByte(npc.Size);
 				byte level = npc.GetDisplayLevel(m_gameClient.Player);
-				if((npc.Flags&GameNPC.eFlags.STATUE)!=0)
+				if(npc.IsStatue)
 				{
 					level |= 0x80;
 				}
@@ -196,9 +196,9 @@ namespace DOL.GS.PacketHandler
 				byte flags = (byte)(GameServer.ServerRules.GetLivingRealm(m_gameClient.Player, npc) << 6);
 				if ((npc.Flags & GameNPC.eFlags.GHOST) != 0) flags |= 0x01;
 				if (npc.Inventory != null) flags |= 0x02; //If mob has equipment, then only show it after the client gets the 0xBD packet
-				if ((npc.Flags & GameNPC.eFlags.PEACE) != 0) flags |= 0x10;
-				if ((npc.Flags & GameNPC.eFlags.FLYING) != 0) flags |= 0x20;
-				if((npc.Flags & GameNPC.eFlags.TORCH) != 0) flags |= 0x04;
+				if (npc.IsPeaceful) flags |= 0x10;
+				if (npc.IsFlying) flags |= 0x20;
+				if(npc.IsTorchLit) flags |= 0x04;
 				
 				pak.WriteByte(flags);
 				pak.WriteByte(0x20); //TODO this is the default maxstick distance
@@ -213,14 +213,14 @@ namespace DOL.GS.PacketHandler
 						flags2 |= 0x80; // have Owner
 					}
 				}
-				if ((npc.Flags & GameNPC.eFlags.CANTTARGET) != 0)
+				if (npc.IsCannotTarget)
 					if (m_gameClient.Account.PrivLevel > 1) add += "-DOR"; // indicates DOR flag for GMs
 				else flags2 |= 0x01;
-				if ((npc.Flags & GameNPC.eFlags.DONTSHOWNAME) != 0)
+				if (npc.IsDontShowName)
 					if (m_gameClient.Account.PrivLevel > 1) add += "-NON"; // indicates NON flag for GMs
 				else flags2 |= 0x02;
 	
-				if( ( npc.Flags & GameNPC.eFlags.STEALTH ) > 0 )
+				if( npc.IsStealthed )
 					flags2 |= 0x04;
 	
 				eQuestIndicator questIndicator = npc.GetQuestIndicator(m_gameClient.Player);
@@ -298,7 +298,7 @@ namespace DOL.GS.PacketHandler
 						}
 						pak.WriteByte(player.Level);
 						pak.WritePascalString(player.Name);
-						pak.WriteString(player.CharacterClass.Name, 4);
+						pak.WriteString(player.Salutation, 4);
 						//Dinberg:Instances - you know the score by now ;)
 						//ZoneSkinID for clientside positioning of objects.
 						if (player.CurrentZone != null)

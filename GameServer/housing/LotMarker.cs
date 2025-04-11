@@ -19,6 +19,8 @@
 using System;
 using System.Collections;
 using DOL.Database;
+using DOL.GS.Finance;
+using DOL.GS.Geometry;
 using DOL.GS.PacketHandler;
 
 namespace DOL.GS.Housing
@@ -110,11 +112,11 @@ namespace DOL.GS.Housing
 					return;
 				}
 
-			    long totalCost = HouseTemplateMgr.GetLotPrice(DatabaseItem);
-				if (player.RemoveMoney(totalCost, "You just bought this lot for {0}.",
-				                       eChatType.CT_Merchant, eChatLoc.CL_SystemWindow))
+			    var totalCost = Currency.Copper.Mint(HouseTemplateMgr.GetLotPrice(DatabaseItem));
+				if (player.RemoveMoney(totalCost))
 				{
-                    InventoryLogging.LogInventoryAction(player, this, eInventoryActionType.Merchant, totalCost);
+					player.SendMessage(string.Format("You just bought this lot for {0}.", totalCost.ToText()), eChatType.CT_Merchant, eChatLoc.CL_SystemWindow);
+                    InventoryLogging.LogInventoryAction(player, this, eInventoryActionType.Merchant, totalCost.Amount);
 					DatabaseItem.LastPaid = DateTime.Now;
 					DatabaseItem.OwnerID = player.ObjectId;
 					CreateHouse(player, 0);
@@ -254,11 +256,7 @@ namespace DOL.GS.Housing
 		{
 			var obj = new GameLotMarker
 			          	{
-			          		X = house.X,
-			          		Y = house.Y,
-			          		Z = house.Z,
-			          		CurrentRegionID = house.RegionID,
-			          		Heading = (ushort) house.Heading,
+                            Position = Position.Create(house.RegionID, house.X, house.Y, house.Z, (ushort)house.Heading),
 			          		Name = "Lot Marker",
 			          		Model = 1308,
 			          		DatabaseItem = house

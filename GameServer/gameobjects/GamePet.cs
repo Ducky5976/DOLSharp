@@ -89,10 +89,13 @@ namespace DOL.GS
 			get { return base.Level; }
 			set
 			{
-				// Don't set the pet level until the owner is set
-				// This skips unnecessary calls to code in base.Level
-				if (Owner != null)
-					base.Level = value;
+                // Don't set the pet level until the owner is set
+                // This skips unnecessary calls to code in base.Level
+                if (Owner != null)
+                {
+                    base.Level = value;
+                    SortSpells();
+                }
 			}
 		}
 
@@ -508,25 +511,6 @@ namespace DOL.GS
 
 			double speed = 100 * weaponSpeed * (1.0 - (GetModified(eProperty.Quickness) - 60) / 500.0);
 			return (int)Math.Max(500.0, (speed * (double)GetModified(eProperty.MeleeSpeed) * 0.01)); // no bonus is 100%, opposite how players work
-		}
-
-		/// <summary>
-		/// Calculate how fast this pet can cast a given spell
-		/// </summary>
-		/// <param name="spell"></param>
-		/// <returns></returns>
-		public override int CalculateCastingTime(SpellLine line, Spell spell)
-		{
-			int ticks = spell.CastTime;
-
-			double percent = DexterityCastTimeReduction;
-			percent -= GetModified(eProperty.CastingSpeed) * .01;
-
-			ticks = (int)(ticks * Math.Max(CastingSpeedReductionCap, percent));
-			if (ticks < MinimumCastingSpeed)
-				ticks = MinimumCastingSpeed;
-
-			return ticks;
 		}
 		#endregion
 

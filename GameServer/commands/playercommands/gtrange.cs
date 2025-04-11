@@ -16,7 +16,9 @@
  * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
  *
  */
+using DOL.GS.Geometry;
 using DOL.GS.PacketHandler;
+using DOL.Language;
 
 namespace DOL.GS.Commands
 {
@@ -32,13 +34,13 @@ namespace DOL.GS.Commands
 			if (IsSpammingCommand(client.Player, "gtrange"))
 				return;
 
-			if (client.Player.GroundTarget != null)
+			if (client.Player.GroundTargetPosition != Position.Nowhere)
 			{
-                int range = client.Player.GetDistanceTo( client.Player.GroundTarget );
-				client.Out.SendMessage("Range to target: " + range + " units.", eChatType.CT_System, eChatLoc.CL_SystemWindow);
+                var range = (int)client.Player.Coordinate.DistanceTo(client.Player.GroundTargetPosition);
+				client.Out.SendMessage(LanguageMgr.GetTranslation(client, "Scripts.Players.Gtrange.Range", range), eChatType.CT_System, eChatLoc.CL_SystemWindow);
 			}
 			else
-				client.Out.SendMessage("Range to target: You don't have a ground target set.", eChatType.CT_System, eChatLoc.CL_SystemWindow);
+				client.Out.SendMessage(LanguageMgr.GetTranslation(client, "Scripts.Players.Gtrange.NoTarget"), eChatType.CT_System, eChatLoc.CL_SystemWindow);
 		}
 	}
 }

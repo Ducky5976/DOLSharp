@@ -33,6 +33,7 @@ using DOL.GS.Utils;
 using DOL.Language;
 
 using log4net;
+using DOL.GS.Geometry;
 
 namespace DOL.GS.Spells
 {
@@ -343,7 +344,7 @@ namespace DOL.GS.Spells
 			// will prevent us from knowing which spell is the oldest and should be canceled - we can go ahead and simply
 			// cancel the last spell in the list (which will result in inconsistent behavior) or change the code that adds
 			// spells to ConcentrationEffects so that it enforces predictable ordering.
-			if (pulsingSpells.Count > 1)
+			if (pulsingSpells.Count > 1 && (player == null || pulsingSpells.Count >= player.CharacterClass.MaxPulsingSpells))
 			{
 				pulsingSpells[pulsingSpells.Count - 1].Cancel(false);
 			}
@@ -361,7 +362,7 @@ namespace DOL.GS.Spells
 		{
 			GameNPC npc = target as GameNPC;
 			if (Spell.Target.ToUpper() == "REALM" && Caster is GamePlayer &&
-				(npc == null || npc.Realm != Caster.Realm || (npc.Flags & GameNPC.eFlags.PEACE) != 0))
+				(npc == null || npc.Realm != Caster.Realm || npc.IsPeaceful))
 				target = Caster;
 		}
 
@@ -409,8 +410,8 @@ namespace DOL.GS.Spells
 			Caster.Notify(GameLivingEvent.CastStarting, m_caster, new CastingEventArgs(this));
 
 			//[Stryve]: Do not break stealth if spell can be cast without breaking stealth.
-			if (Caster is GamePlayer && UnstealthCasterOnStart)
-				((GamePlayer)Caster).Stealth(false);
+			if (UnstealthCasterOnStart)
+				Caster.Stealth(false);
 
 			if (Caster.IsEngaging)
 			{
@@ -749,7 +750,7 @@ namespace DOL.GS.Spells
 			}
 			if (targetType == "area")
 			{
-				if (!m_caster.IsWithinRadius(m_caster.GroundTarget, CalculateSpellRange()))
+				if (m_caster.Coordinate.DistanceTo(m_caster.GroundTargetPosition) > CalculateSpellRange())
 				{
 					if (!quiet) MessageToCaster("Your area target is out of range.  Select a closer target.", eChatType.CT_SpellResisted);
 					return false;
@@ -1015,7 +1016,7 @@ namespace DOL.GS.Spells
 
 			if (m_spell.Target.ToLower() == "area")
 			{
-				if (!m_caster.IsWithinRadius(m_caster.GroundTarget, CalculateSpellRange()))
+				if (m_caster.Coordinate.DistanceTo(m_caster.GroundTargetPosition) > CalculateSpellRange())
 				{
 					MessageToCaster("Your area target is out of range.  Select a closer target.", eChatType.CT_SpellResisted);
 					return false;
@@ -1185,7 +1186,7 @@ namespace DOL.GS.Spells
 
 			if (m_spell.Target.ToLower() == "area")
 			{
-				if (!m_caster.IsWithinRadius(m_caster.GroundTarget, CalculateSpellRange()))
+				if (m_caster.Coordinate.DistanceTo(m_caster.GroundTargetPosition) > CalculateSpellRange())
 				{
 					if (!quiet) MessageToCaster("Your area target is out of range.  Select a closer target.", eChatType.CT_SpellResisted);
 					return false;
@@ -1390,7 +1391,7 @@ namespace DOL.GS.Spells
 
 			if (m_spell.Target.ToLower() == "area")
 			{
-				if (!m_caster.IsWithinRadius(m_caster.GroundTarget, CalculateSpellRange()))
+				if (m_caster.Coordinate.DistanceTo(m_caster.GroundTargetPosition) > CalculateSpellRange())
 				{
 					if (!quiet) MessageToCaster("Your area target is out of range.  Select a closer target.", eChatType.CT_SpellResisted);
 					return false;
@@ -1784,7 +1785,65 @@ namespace DOL.GS.Spells
 		/// <returns>effective casting time in milliseconds</returns>
 		public virtual int CalculateCastingTime()
 		{
-			return m_caster.CalculateCastingTime(m_spellLine, m_spell);
+			//return m_caster.CalculateCastingTime(SpellLine, Spell);
+			int ticks = Spell.CastTime;
+
+			if (Spell.InstrumentRequirement != 0 ||
+			    SpellLine.KeyName == GlobalSpellsLines.Item_Spells ||
+			    SpellLine.KeyName.StartsWith(GlobalSpellsLines.Champion_Lines_StartWith))
+			{
+				return ticks;
+			}
+
+			if (Spell.SpellType == "Chamber")
+                return ticks;
+
+            if ((SpellLine.KeyName == "Cursing"
+                 || SpellLine.KeyName == "Cursing Spec"
+                 || SpellLine.KeyName == "Hexing"
+                 || SpellLine.KeyName == "Witchcraft")
+                && (Spell.SpellType != "ArmorFactorBuff"
+                    && Spell.SpellType != "Bladeturn"
+                    && Spell.SpellType != "ArmorAbsorptionBuff"
+                    && Spell.SpellType != "MatterResistDebuff"
+                    && Spell.SpellType != "Uninterruptable"
+                    && Spell.SpellType != "Powerless"
+                    && Spell.SpellType != "Range"
+                    && Spell.Name != "Lesser Twisting Curse"
+                    && Spell.Name != "Twisting Curse"
+                    && Spell.Name != "Lesser Winding Curse"
+                    && Spell.Name != "Winding Curse"
+                    && Spell.Name != "Lesser Wrenching Curse"
+                    && Spell.Name != "Wrenching Curse"
+                    && Spell.Name != "Lesser Warping Curse"
+                    && Spell.Name != "Warping Curse"))
+            {
+                return ticks;
+            }
+
+			if (Caster.EffectList.GetOfType<QuickCastEffect>() != null)
+			{
+				// Most casters have access to the Quickcast ability (or the Necromancer equivalent, Facilitate Painworking).
+				// This ability will allow you to cast a spell without interruption.
+				// http://support.darkageofcamelot.com/kb/article.php?id=022
+
+				// A: You're right. The answer I should have given was that Quick Cast reduces the time needed to cast to a flat two seconds,
+				// and that a spell that has been quick casted cannot be interrupted. ...
+				// http://www.camelotherald.com/news/news_article.php?storyid=1383
+
+				return 2000;
+			}
+
+
+			double percent = Caster.DexterityCastTimeReduction;
+
+			percent *= 1.0 - Caster.GetModified(eProperty.CastingSpeed) * 0.01;
+
+			ticks = (int)(ticks * Math.Max(Caster.CastingSpeedReductionCap, percent));
+			if (ticks < Caster.MinimumCastingSpeed)
+				ticks = Caster.MinimumCastingSpeed;
+
+			return ticks;
 		}
 
 
@@ -1862,8 +1921,8 @@ namespace DOL.GS.Spells
 				((GamePlayer)Caster).IsOnHorse = false;
 
 			//[Stryve]: Do not break stealth if spell never breaks stealth.
-			if ((Caster is GamePlayer) && UnstealthCasterOnFinish)
-				((GamePlayer)Caster).Stealth(false);
+			if (UnstealthCasterOnFinish)
+				Caster.Stealth(false);
 
 			if (Caster is GamePlayer && !HasPositiveEffect)
 			{
@@ -2049,7 +2108,7 @@ namespace DOL.GS.Spells
 					else
 						if (modifiedRadius > 0)
 					{
-						foreach (GamePlayer player in WorldMgr.GetPlayersCloseToSpot(Caster.CurrentRegionID, Caster.GroundTarget.X, Caster.GroundTarget.Y, Caster.GroundTarget.Z, modifiedRadius))
+						foreach (GamePlayer player in WorldMgr.GetPlayersCloseToSpot(Caster.GroundTargetPosition, modifiedRadius))
 						{
 							if (GameServer.ServerRules.IsAllowedToAttack(Caster, player, true))
 							{
@@ -2067,7 +2126,7 @@ namespace DOL.GS.Spells
 								else list.Add(player);
 							}
 						}
-						foreach (GameNPC npc in WorldMgr.GetNPCsCloseToSpot(Caster.CurrentRegionID, Caster.GroundTarget.X, Caster.GroundTarget.Y, Caster.GroundTarget.Z, modifiedRadius))
+						foreach (GameNPC npc in WorldMgr.GetNPCsCloseToSpot(Caster.GroundTargetPosition, modifiedRadius))
 						{
 							if (npc is GameStorm)
 								list.Add(npc);
@@ -2514,7 +2573,7 @@ namespace DOL.GS.Spells
 				}
 				else if (Spell.Target.ToLower() == "area")
 				{
-					int dist = t.GetDistanceTo(Caster.GroundTarget);
+					int dist = (int)t.Coordinate.DistanceTo(Caster.GroundTargetPosition);
 					if (dist >= 0)
 						ApplyEffectOnTarget(t, (effectiveness - CalculateAreaVariance(t, dist, Spell.Radius)));
 				}

@@ -34,6 +34,8 @@ using System.Reflection;
 using DOL.AI.Brain;
 using DOL.Database;
 using DOL.Events;
+using DOL.GS.Finance;
+using DOL.GS.Geometry;
 using DOL.GS.PacketHandler;
 using log4net;
 /* I suggest you declare yourself some namespaces for your quests
@@ -81,9 +83,8 @@ namespace DOL.GS.Quests.Albion
 		private static ItemTemplate recruitsBoots = null;
 		private static ItemTemplate recruitsQuiltedBoots = null;
 
-		private static GameLocation felinEnd = new GameLocation("Lady Felin", 1, 558999, 514944, 2628, 2332);
-		private static GameLocation felinStart = new GameLocation("Lady Felin", 1, 558846, 516434, 2519, 2332);
-
+        private static Position felinStart = Position.Create(regionID: 1, x: 558846, y: 516434, z: 2519, heading: 2332 );
+        private static Position felinEnd = Position.Create(regionID: 1, x: 558999, y: 514944, z: 2628, heading: 2332 );
 
 		/* We need to define the constructors from the base class here, else there might be problems
 		 * when loading this quest...
@@ -150,13 +151,9 @@ namespace DOL.GS.Quests.Albion
 				ladyFelin.Name = "Lady Felin";
 				ladyFelin.GuildName = "Part of " + questTitle + " Quest";
 				ladyFelin.Realm = eRealm.None;
-				ladyFelin.CurrentRegionID = 1;
 				ladyFelin.Size = 50;
 				ladyFelin.Level = 30;
-				ladyFelin.X = 558846;
-				ladyFelin.Y = 516434;
-				ladyFelin.Z = 2519;
-				ladyFelin.Heading = 2332;
+                ladyFelin.Position = felinStart;
 
 				StandardMobBrain brain = new StandardMobBrain();
 				brain.AggroLevel = 0;
@@ -441,7 +438,7 @@ namespace DOL.GS.Quests.Albion
 				InventoryItem item = player.Inventory.GetItem((eInventorySlot)uArgs.Slot);
 				if (item != null && item.Id_nb == necklaceOfDoppelganger.Id_nb)
 				{
-					if (player.IsWithinRadius( felinEnd, 2500 ))
+					if (player.Coordinate.DistanceTo(felinEnd) <= 2500)
 					{
 						foreach (GamePlayer visPlayer in player.GetPlayersInRadius(WorldMgr.VISIBILITY_DISTANCE))
 						{
@@ -454,12 +451,9 @@ namespace DOL.GS.Quests.Albion
 
 						if (!ladyFelin.IsAlive || ladyFelin.ObjectState != GameObject.eObjectState.Active)
 						{
-							ladyFelin.X = felinStart.X;
-							ladyFelin.Y = felinStart.Y;
-							ladyFelin.Z = felinStart.Z;
-							ladyFelin.Heading = felinStart.Heading;
+							ladyFelin.Position = felinStart;
 							ladyFelin.AddToWorld();
-							ladyFelin.WalkTo(felinEnd.X, felinEnd.Y, felinEnd.Z, ladyFelin.MaxSpeed);
+							ladyFelin.WalkTo(felinEnd.Coordinate, ladyFelin.MaxSpeed);
 						}
 						quest.Step = 3;
 					}
@@ -481,10 +475,7 @@ namespace DOL.GS.Quests.Albion
 
 				if (quest.Step == 3 && (!ladyFelin.IsAlive || ladyFelin.ObjectState != GameObject.eObjectState.Active))
 				{
-					ladyFelin.X = felinEnd.X;
-					ladyFelin.Y = felinEnd.Y;
-					ladyFelin.Z = felinEnd.Z;
-					ladyFelin.Heading = felinEnd.Heading;
+					ladyFelin.Position = felinEnd;
 					ladyFelin.AddToWorld();
 				}
 			}
@@ -858,7 +849,8 @@ namespace DOL.GS.Quests.Albion
 
 			m_questPlayer.GainExperience(GameLiving.eXPSource.Quest, 40, true);
             long money = Money.GetMoney(0, 0, 0, 4, Util.Random(50));
-			m_questPlayer.AddMoney(money, "You recieve {0} as a reward.");
+			m_questPlayer.AddMoney(Currency.Copper.Mint(money));
+			m_questPlayer.SendSystemMessage(string.Format("You recieve {0} as a reward.", Money.GetString(money)));
             InventoryLogging.LogInventoryAction("(QUEST;" + Name + ")", m_questPlayer, eInventoryActionType.Quest, money);
 
 			GameEventMgr.RemoveHandler(m_questPlayer, GamePlayerEvent.UseSlot, new DOLEventHandler(PlayerUseSlot));

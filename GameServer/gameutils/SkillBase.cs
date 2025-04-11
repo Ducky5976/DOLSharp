@@ -131,6 +131,7 @@ namespace DOL.GS
 					// Load Spec, SpecXAbility, SpecXSpellLine, SpecXStyle, Styles, StylesProcs...
 					// Need Spell, SpellLines, Abilities Loaded (including RealmAbilities...) !
 					LoadSpecializations();
+					CharacterClassDB.Load();
 					LoadClassSpecializations();
 					LoadAbilityHandlers();
 					LoadSkillHandlers();
@@ -673,7 +674,8 @@ namespace DOL.GS
 								}
 								else
 								{
-									if (log.IsWarnEnabled)
+									var isNoChampionStyle = !entry.Item1.IsSubclassOf(typeof(LiveChampionsLineSpec));
+									if (log.IsWarnEnabled && isNoChampionStyle)
 										log.WarnFormat("Specialization {0} - Duplicate Style Key, StyleID {1} : ClassID {2}, Ignored...", spec.KeyName, newStyle.ID, specStyle.ClassId);
 								}
 								

@@ -36,7 +36,9 @@
 
 
 using System.Collections;
+using DOL.GS.Finance;
 using DOL.GS.PacketHandler;
+using DOL.Language;
 
 namespace DOL.GS.Commands
 {
@@ -60,11 +62,11 @@ namespace DOL.GS.Commands
 			{
 				if (ServerProperties.Properties.FREE_RESPEC)
 				{
-					DisplayMessage(client, "Target any trainer and use:");
-					DisplayMessage(client, "/respec ALL or /respec DOL to respec all skills");
-					DisplayMessage(client, "/respec <line name> to respec a single skill line");
-					DisplayMessage(client, "/respec REALM to respec realm abilities");
-					DisplayMessage(client, "/respec CHAMPION to respec champion abilities");
+					DisplayMessage(client, LanguageMgr.GetTranslation(client, "Scripts.Players.Respec.Info1"));
+					DisplayMessage(client, LanguageMgr.GetTranslation(client, "Scripts.Players.Respec.Info2"));
+					DisplayMessage(client, LanguageMgr.GetTranslation(client, "Scripts.Players.Respec.Info3"));
+					DisplayMessage(client, LanguageMgr.GetTranslation(client, "Scripts.Players.Respec.Info4"));
+					DisplayMessage(client, LanguageMgr.GetTranslation(client, "Scripts.Players.Respec.Info5"));
 					return;
 				}
 				
@@ -74,32 +76,32 @@ namespace DOL.GS.Commands
 					&& client.Player.RespecAmountDOL <1
 					&& client.Player.RespecAmountRealmSkill < 1)
 				{
-					DisplayMessage(client, "You don't seem to have any respecs available.");
-					DisplayMessage(client, "Use /respec buy to buy an single-line respec.");
+					DisplayMessage(client, LanguageMgr.GetTranslation(client, "Scripts.Players.Respec.NotAvailable"));
+					DisplayMessage(client, LanguageMgr.GetTranslation(client, "Scripts.Players.Respec.Buy"));
 					return;
 				}
 
 				if (client.Player.RespecAmountAllSkill > 0)
 				{
-					DisplayMessage(client, "You have " + client.Player.RespecAmountAllSkill + " full skill respecs available.");
-					DisplayMessage(client, "Target any trainer and use /respec ALL");
+					DisplayMessage(client, LanguageMgr.GetTranslation(client, "Scripts.Players.Respec.AvailableFull", client.Player.RespecAmountAllSkill));
+					DisplayMessage(client, LanguageMgr.GetTranslation(client, "Scripts.Players.Respec.TrainerAll"));
 				}
 				if (client.Player.RespecAmountSingleSkill > 0)
 				{
-					DisplayMessage(client, "You have " + client.Player.RespecAmountSingleSkill + " single-line respecs available.");
-					DisplayMessage(client, "Target any trainer and use /respec <line name>");
+					DisplayMessage(client, LanguageMgr.GetTranslation(client, "Scripts.Players.Respec.AvailableSingle", client.Player.RespecAmountSingleSkill));
+					DisplayMessage(client, LanguageMgr.GetTranslation(client, "Scripts.Players.Respec.TrainerSingle"));
 				}
 				if (client.Player.RespecAmountRealmSkill > 0)
 				{
-					DisplayMessage(client, "You have " + client.Player.RespecAmountRealmSkill + " realm skill respecs available.");
-					DisplayMessage(client, "Target any trainer and use /respec REALM");
+					DisplayMessage(client, LanguageMgr.GetTranslation(client, "Scripts.Players.Respec.AvailableRealm", client.Player.RespecAmountRealmSkill));
+					DisplayMessage(client, LanguageMgr.GetTranslation(client, "Scripts.Players.Respec.TrainerRealm"));
 				}
 				if (client.Player.RespecAmountDOL > 0)
 				{
-					DisplayMessage(client, "You have " + client.Player.RespecAmountDOL + " DOL ( full skill ) respecs available.");
-					DisplayMessage(client, "Target any trainer and use /respec DOL");
+					DisplayMessage(client, LanguageMgr.GetTranslation(client, "Scripts.Players.Respec.AvailableDOL", client.Player.RespecAmountDOL));
+					DisplayMessage(client, LanguageMgr.GetTranslation(client, "Scripts.Players.Respec.TrainerDOL"));
 				}
-				DisplayMessage(client, "Use /respec buy to buy an single-line respec.");
+				DisplayMessage(client, LanguageMgr.GetTranslation(client, "Scripts.Players.Respec.Buy"));
 				return;
 			}
 
@@ -107,7 +109,7 @@ namespace DOL.GS.Commands
 			// Player must be speaking with trainer to respec.  (Thus have trainer targeted.) Prevents losing points out in the wild.
 			if (args[1].ToLower() != "buy" && (trainer == null || !trainer.CanTrain(client.Player)))
 			{
-				DisplayMessage(client, "You must be speaking with your trainer to respec.");
+				DisplayMessage(client, LanguageMgr.GetTranslation(client, "Scripts.Players.Respec.NoTrainer"));
 				return;
 			}
 
@@ -121,17 +123,17 @@ namespace DOL.GS.Commands
 						// Buy respec
 						if (client.Player.CanBuyRespec == false || client.Player.RespecCost < 0)
 						{
-							DisplayMessage(client, "You can't buy a respec on this level again.");
+							DisplayMessage(client, LanguageMgr.GetTranslation(client, "Scripts.Players.Respec.BuyLevel"));
 							return;
 						}
 
 						long mgold = client.Player.RespecCost;
-						if ((client.Player.Gold + 1000 * client.Player.Platinum) < mgold)
+						if (client.Player.CopperBalance < mgold * 100 * 100)
 						{
-							DisplayMessage(client, "You don't have enough money! You need " + mgold + " gold!");
+							DisplayMessage(client, LanguageMgr.GetTranslation(client, "Scripts.Players.Respec.Money", mgold));
 							return;
 						}
-						client.Out.SendCustomDialog("It costs " + mgold + " gold. Want you really buy?", new CustomDialogResponse(RespecDialogResponse));
+						client.Out.SendCustomDialog(LanguageMgr.GetTranslation(client, "Scripts.Players.Respec.ConfirmBuy", mgold), new CustomDialogResponse(RespecDialogResponse));
 						client.Player.TempProperties.setProperty(BUY_RESPEC, true);
 						break;
 					}
@@ -141,11 +143,11 @@ namespace DOL.GS.Commands
 						if (client.Player.RespecAmountAllSkill < 1
 							&& !ServerProperties.Properties.FREE_RESPEC)
 						{
-							DisplayMessage(client, "You don't seem to have any full skill respecs available.");
+							DisplayMessage(client, LanguageMgr.GetTranslation(client, "Scripts.Players.Respec.NoFullAvailable"));
 							return;
 						}
 
-						client.Out.SendCustomDialog("CAUTION: All respec changes are final with no second chance. Proceed carefully!", new CustomDialogResponse(RespecDialogResponse));
+						client.Out.SendCustomDialog(LanguageMgr.GetTranslation(client, "Scripts.Players.Respec.ConfirmRespec"), new CustomDialogResponse(RespecDialogResponse));
 						client.Player.TempProperties.setProperty(ALL_RESPEC, true);
 						break;
 					}
@@ -155,11 +157,11 @@ namespace DOL.GS.Commands
 						if (client.Player.RespecAmountDOL < 1
 							&& !ServerProperties.Properties.FREE_RESPEC)
 						{
-							DisplayMessage(client, "You don't seem to have any DOL respecs available.");
+							DisplayMessage(client, LanguageMgr.GetTranslation(client, "Scripts.Players.Respec.NoDOLAvailable"));
 							return;
 						}
 
-						client.Out.SendCustomDialog("CAUTION: All respec changes are final with no second chance. Proceed carefully!", new CustomDialogResponse(RespecDialogResponse));
+						client.Out.SendCustomDialog(LanguageMgr.GetTranslation(client, "Scripts.Players.Respec.ConfirmRespec"), new CustomDialogResponse(RespecDialogResponse));
 						client.Player.TempProperties.setProperty(DOL_RESPEC, true);
 						break;
 					}
@@ -168,11 +170,11 @@ namespace DOL.GS.Commands
 						if (client.Player.RespecAmountRealmSkill < 1
 							&& !ServerProperties.Properties.FREE_RESPEC)
 						{
-							DisplayMessage(client, "You don't seem to have any realm skill respecs available.");
+							DisplayMessage(client, LanguageMgr.GetTranslation(client, "Scripts.Players.Respec.NoRealmAvailable"));
 							return;
 						}
 
-						client.Out.SendCustomDialog("CAUTION: All respec changes are final with no second chance. Proceed carefully!", new CustomDialogResponse(RespecDialogResponse));
+						client.Out.SendCustomDialog(LanguageMgr.GetTranslation(client, "Scripts.Players.Respec.ConfirmRespec"), new CustomDialogResponse(RespecDialogResponse));
 						client.Player.TempProperties.setProperty(RA_RESPEC, true);
 						break;
 					}
@@ -180,7 +182,7 @@ namespace DOL.GS.Commands
 					{
 						if (ServerProperties.Properties.FREE_RESPEC)
 						{
-							client.Out.SendCustomDialog("CAUTION: All respec changes are final with no second chance. Proceed carefully!", new CustomDialogResponse(RespecDialogResponse));
+							client.Out.SendCustomDialog(LanguageMgr.GetTranslation(client, "Scripts.Players.Respec.ConfirmRespec"), new CustomDialogResponse(RespecDialogResponse));
 							client.Player.TempProperties.setProperty(CHAMP_RESPEC, true);
 							break;
 						}
@@ -192,7 +194,7 @@ namespace DOL.GS.Commands
 						if (client.Player.RespecAmountSingleSkill < 1
 							&& !ServerProperties.Properties.FREE_RESPEC)
 						{
-							DisplayMessage(client, "You don't seem to have any single-line respecs available.");
+							DisplayMessage(client, LanguageMgr.GetTranslation(client, "Scripts.Players.Respec.NoLineAvailable"));
 							return;
 						}
 
@@ -200,16 +202,16 @@ namespace DOL.GS.Commands
 						Specialization specLine = client.Player.GetSpecializationByName(lineName, false);
 						if (specLine == null)
 						{
-							DisplayMessage(client, "No line with name '" + lineName + "' found.");
+							DisplayMessage(client, LanguageMgr.GetTranslation(client, "Scripts.Players.Respec.LineNotFound", lineName));
 							return;
 						}
 						if (specLine.Level < 2)
 						{
-							DisplayMessage(client, "Level of " + specLine.Name + " line is less than 2. ");
+							DisplayMessage(client, LanguageMgr.GetTranslation(client, "Scripts.Players.Respec.LineTooLow", specLine.Name));
 							return;
 						}
 
-						client.Out.SendCustomDialog("CAUTION: All respec changes are final with no second chance. Proceed carefully!", new CustomDialogResponse(RespecDialogResponse));
+						client.Out.SendCustomDialog(LanguageMgr.GetTranslation(client, "Scripts.Players.Respec.ConfirmRespec"), new CustomDialogResponse(RespecDialogResponse));
 						client.Player.TempProperties.setProperty(LINE_RESPEC, specLine);
 						break;
 					}
@@ -254,24 +256,23 @@ namespace DOL.GS.Commands
 			if (player.TempProperties.getProperty(BUY_RESPEC, false))
 			{
 				player.TempProperties.removeProperty(BUY_RESPEC);
-				if (player.RespecCost >= 0 && player.RemoveMoney(player.RespecCost * 10000))
+				if (player.RespecCost >= 0 && player.RemoveMoney(Currency.Copper.Mint(player.RespecCost * 100 * 100)))
 				{
                     InventoryLogging.LogInventoryAction(player, "(respec)", eInventoryActionType.Merchant, player.RespecCost * 10000);
 					player.RespecAmountSingleSkill++;
 					player.RespecBought++;
-					DisplayMessage(player, "You bought a single line respec!");
+					DisplayMessage(player, LanguageMgr.GetTranslation(player.Client, "Scripts.Players.Respec.RespecBought"));
 				}
-				player.Out.SendUpdateMoney();
 			}			
 			// Assign full points returned
 			if (player.SkillSpecialtyPoints > specPoints)
 			{
 				player.RemoveAllStyles(); // Kill styles
-				DisplayMessage(player, "You regain " + (player.SkillSpecialtyPoints - specPoints) + " specialization points!");
+				DisplayMessage(player, LanguageMgr.GetTranslation(player.Client, "Scripts.Players.Respec.PointsRegain", player.SkillSpecialtyPoints - specPoints));
 			}
 			if (player.RealmSpecialtyPoints > realmSpecPoints)
 			{
-				 DisplayMessage(player, "You regain " + (player.RealmSpecialtyPoints - realmSpecPoints) + " realm specialization points!");
+				 DisplayMessage(player, LanguageMgr.GetTranslation(player.Client, "Scripts.Players.Respec.RespecBought", player.RealmSpecialtyPoints - realmSpecPoints));
 			}
 			player.RefreshSpecDependantSkills(false);
 			// Notify Player of points

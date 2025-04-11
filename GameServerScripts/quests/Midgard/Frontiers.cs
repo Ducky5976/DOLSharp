@@ -37,6 +37,8 @@ using System.Reflection;
 using DOL.AI.Brain;
 using DOL.Database;
 using DOL.Events;
+using DOL.GS.Finance;
+using DOL.GS.Geometry;
 using DOL.GS.PacketHandler;
 using DOL.GS.Profession;
 using DOL.Language;
@@ -85,8 +87,8 @@ namespace DOL.GS.Quests.Midgard
 		private static GameNPC idora = null;
 		private static GameStableMaster vorgar = null;
 
-		private static GameLocation locationIdora = null;
-		private static GameLocation locationVorgar = null;
+		private static Position idoraPosition = Position.Nowhere;
+		private static Position vorgarPosition = Position.Nowhere;
 
 		private static GameStableMaster njiedi = null;
 		private static GameNPC griffin = null;
@@ -171,13 +173,9 @@ namespace DOL.GS.Quests.Midgard
 				annark.Name = "Stor Gothi Annark";
 				annark.GuildName = "Part of " + questTitle + " Quest";
 				annark.Realm = eRealm.Midgard;
-				annark.CurrentRegionID = 100;
 				annark.Size = 51;
 				annark.Level = 66;
-				annark.X = 765357;
-				annark.Y = 668790;
-				annark.Z = 5759;
-				annark.Heading = 7711;
+                annark.Position = Position.Create(regionID: 100, x: 765357, y: 668790, z: 5759, heading: 7711);
 
 				//annark.AddNPCEquipment((byte)eEquipmentItems.TORSO, 798, 0, 0, 0);
 				//annark.AddNPCEquipment((byte)eEquipmentItems.RIGHT_HAND, 19, 0, 0, 0);
@@ -204,12 +202,9 @@ namespace DOL.GS.Quests.Midgard
                 idora.Name = LanguageMgr.GetTranslation(ServerProperties.Properties.SERV_LANGUAGE, "Mid.Frontiers.NPCScryerIdora");
 				idora.GuildName = "Part of " + questTitle + " Quest";
 				idora.Realm = eRealm.Midgard;
-				idora.CurrentRegionID = 234;
 				idora.Size = 52;
 				idora.Level = 50;
-				idora.X = 558081;
-				idora.Y = 573988;
-				idora.Z = 8640;
+                idora.Position = Position.Create(regionID: 234, x: 558081, y: 573988, z: 8640, heading: 1558);
 
 				GameNpcInventoryTemplate template = new GameNpcInventoryTemplate();
 				template.AddNPCEquipment(eInventorySlot.TorsoArmor, 81);
@@ -226,7 +221,6 @@ namespace DOL.GS.Quests.Midgard
 //				idora.AddNPCEquipment(Slot.CLOAK, 91, 0, 0, 0);
 //				idora.AddNPCEquipment(Slot.RIGHTHAND, 3, 0, 0, 0);
 
-				idora.Heading = 1558;
 				idora.MaxSpeedBase = 200;
 				idora.EquipmentTemplateID = "200292";
 
@@ -245,8 +239,7 @@ namespace DOL.GS.Quests.Midgard
 			else
 				idora = npcs[0];
 
-            Point2D point = idora.GetPointFromHeading( idora.Heading, 30 );
-			locationIdora = new GameLocation(idora.CurrentZone.Description, idora.CurrentRegionID, point.X, point.Y, idora.Z);
+			idoraPosition = idora.Position + Vector.Create(idora.Orientation, length: 30);
 
 			ticketToSvasudFaste = CreateTicketTo("Svasud Faste", "hs_mularn_svasudfaste");
 			ticketToMularn = CreateTicketTo("Mularn", "hs_svasudfaste_mularn");
@@ -262,7 +255,6 @@ namespace DOL.GS.Quests.Midgard
 					log.Warn("Could not find " + njiedi.Name + ", creating ...");
 				njiedi.GuildName = "Stable Master";
 				njiedi.Realm = eRealm.Midgard;
-				njiedi.CurrentRegionID = 100;
 				njiedi.Size = 51;
 				njiedi.Level = 50;
 
@@ -277,11 +269,7 @@ namespace DOL.GS.Quests.Midgard
 //				njiedi.AddNPCEquipment(Slot.LEGS, 82, 10, 0, 0);
 //				njiedi.AddNPCEquipment(Slot.FEET, 84, 10, 0, 0);
 //				njiedi.AddNPCEquipment(Slot.CLOAK, 57, 32, 0, 0);
-
-				njiedi.X = GameLocation.ConvertLocalXToGlobalX(55561, 100);
-				njiedi.Y = GameLocation.ConvertLocalYToGlobalY(58225, 100);
-				njiedi.Z = 5005;
-				njiedi.Heading = 126;
+                njiedi.Position = Position.CreateInZone(zoneID: 100, x: 55561, y: 58225, z: 5005, heading: 126);
 
 				StandardMobBrain brain = new StandardMobBrain();
 				brain.AggroLevel = 0;
@@ -323,19 +311,15 @@ namespace DOL.GS.Quests.Midgard
 					log.Warn("Could not find " + griffin.Name + ", creating ...");
 				griffin.GuildName = "Part of " + questTitle + " Quest";
 				griffin.Realm = eRealm.Midgard;
-				griffin.CurrentRegionID = njiedi.CurrentRegionID;
 				griffin.Size = 50;
 				griffin.Level = 50;
-				griffin.X = njiedi.X + 80;
-				griffin.Y = njiedi.Y + 100;
-				griffin.Z = njiedi.Z;
+				griffin.Position = njiedi.Position.With(heading: 93) + Vector.Create(x: 80, y: 100);
 
 				StandardMobBrain brain = new StandardMobBrain();
 				brain.AggroLevel = 0;
 				brain.AggroRange = 0;
 				griffin.SetOwnBrain(brain);
 
-				griffin.Heading = 93;
 				griffin.MaxSpeedBase = 400;
 				//dragonfly.EquipmentTemplateID = 200276;                
 
@@ -360,13 +344,10 @@ namespace DOL.GS.Quests.Midgard
 					log.Warn("Could not find " + vorgar.Name + ", creating ...");
 				vorgar.GuildName = "Stable Master";
 				vorgar.Realm = eRealm.Midgard;
-				vorgar.CurrentRegionID = 100;
 				vorgar.Size = 51;
 				vorgar.Level = 50;
-				vorgar.X = GameLocation.ConvertLocalXToGlobalX(10660, 100);
-				vorgar.Y = GameLocation.ConvertLocalYToGlobalY(3437, 100);
-				vorgar.Z = 5717;
-				vorgar.Heading = 327;
+                vorgar.Position = Position.Create(valeOfMularn.ZoneRegion.ID, x: 10660, y: 3437, z: 5717, heading: 327);
+                vorgar.Position += valeOfMularn.Offset;
 				vorgar.MaxSpeedBase = 200;
 
 				StandardMobBrain brain = new StandardMobBrain();
@@ -389,8 +370,7 @@ namespace DOL.GS.Quests.Midgard
 			else
 				vorgar = npcs[0] as GameStableMaster;
 
-            Point2D vorgarloc = vorgar.GetPointFromHeading( vorgar.Heading, 30 );
-			locationVorgar = new GameLocation(vorgar.CurrentZone.Description, vorgar.CurrentRegionID, vorgarloc.X, vorgarloc.Y, vorgar.Z);
+			vorgarPosition = vorgar.Position + Vector.Create(vorgar.Orientation, length: 30);
 
 			#endregion
 
@@ -792,7 +772,7 @@ namespace DOL.GS.Quests.Midgard
 					//Player is not doing the quest...
 					if (quest.Step == 3 || quest.Step == 2)
 					{
-                        idora.SayTo(player, LanguageMgr.GetTranslation(ServerProperties.Properties.SERV_LANGUAGE, "Mid.Frontiers.TalkToIdora.Talk1", player.CharacterClass.Name));
+                        idora.SayTo(player, LanguageMgr.GetTranslation(ServerProperties.Properties.SERV_LANGUAGE, "Mid.Frontiers.TalkToIdora.Talk1", player.Salutation));
                     }
 					else if (quest.Step == 4)
 					{
@@ -825,7 +805,7 @@ namespace DOL.GS.Quests.Midgard
                             GiveItem(idora, player, translatedPlans);
                             GiveItem(idora, player, ticketToMularn);
                             quest.Step = 5;
-                            quest.TeleportTo(player, idora, locationVorgar, 50);
+                            quest.TeleportTo(player, idora, vorgarPosition, delay: 50, scatterRadius: 0);
                         }
                     }
 
@@ -854,7 +834,7 @@ namespace DOL.GS.Quests.Midgard
 				{
                     annark.SayTo(player, LanguageMgr.GetTranslation(ServerProperties.Properties.SERV_LANGUAGE, "Mid.Frontiers.TalkToAnnark.Talk1"));
                     quest.Step = 3;
-					quest.TeleportTo(player, annark, locationIdora, 30);
+					quest.TeleportTo(player, annark, idoraPosition, delay: 30, scatterRadius: 0);
 					return;
 				}
 
@@ -937,7 +917,8 @@ namespace DOL.GS.Quests.Midgard
 
 				GiveItem(dalikor, player, noteForNjiedi);
 				GiveItem(dalikor, player, askefruerPlans);
-                player.AddMoney(Money.GetMoney(0, 0, 0, 6, 0), LanguageMgr.GetTranslation(ServerProperties.Properties.SERV_LANGUAGE, "Mid.Frontiers.CheckPlayerAcceptQuest.Text3"));
+                player.AddMoney(Currency.Copper.Mint(600));
+                player.SendSystemMessage(string.Format(LanguageMgr.GetTranslation(ServerProperties.Properties.SERV_LANGUAGE, "Mid.Frontiers.CheckPlayerAcceptQuest.Text3"), Money.GetString(Money.GetMoney(0, 0, 0, 6, 0))));
                 InventoryLogging.LogInventoryAction("(QUEST;" + quest.Name + ")", player, eInventoryActionType.Quest, 600);
             }
 		}
@@ -1057,7 +1038,7 @@ namespace DOL.GS.Quests.Midgard
 
 			if (Step < 3 && m_questPlayer.Inventory.GetFirstItemByID(ticketToSvasudFaste.Id_nb, eInventorySlot.Min_Inv, eInventorySlot.Max_Inv) == null)
 			{
-				m_questPlayer.RemoveMoney(Money.GetMoney(0, 0, 0, 6, 0), null);
+				m_questPlayer.RemoveMoney(Currency.Copper.Mint(600));
                 InventoryLogging.LogInventoryAction(m_questPlayer, "(QUEST;" + Name + ")", eInventoryActionType.Quest, 600);
 			}
 
@@ -1080,7 +1061,8 @@ namespace DOL.GS.Quests.Midgard
 
 			m_questPlayer.GainExperience(GameLiving.eXPSource.Quest, 240, true);
             long money = Money.GetMoney(0, 0, 0, 5, Util.Random(50));
-            m_questPlayer.AddMoney(money, LanguageMgr.GetTranslation(ServerProperties.Properties.SERV_LANGUAGE, "Mid.Frontiers.FinishQuest.Text1"));
+            m_questPlayer.AddMoney(Currency.Copper.Mint(money));
+            m_questPlayer.SendSystemMessage(string.Format(LanguageMgr.GetTranslation(ServerProperties.Properties.SERV_LANGUAGE, "Mid.Frontiers.FinishQuest.Text1"), Money.GetString(money)));
             InventoryLogging.LogInventoryAction("(QUEST;" + Name + ")", m_questPlayer, eInventoryActionType.Quest, money);
 		}
 

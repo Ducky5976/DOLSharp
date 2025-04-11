@@ -33,6 +33,8 @@ using System.Reflection;
 using DOL.AI.Brain;
 using DOL.Database;
 using DOL.Events;
+using DOL.GS.Finance;
+using DOL.GS.Geometry;
 using DOL.GS.PacketHandler;
 using log4net;
 /* I suggest you declare yourself some namespaces for your quests
@@ -75,7 +77,9 @@ namespace DOL.GS.Quests.Midgard
 		private static GameNPC dalikor = null;
 		private GameNPC askefruer = null;
 
-		private static GameLocation askefruerLocation = new GameLocation("Fallen Askefruer", 100, 100, 44585, 56194, 4780, 294);
+		private static Position askefruerPosition 
+            = Position.Create(regionID: valeOfMularn.ZoneRegion.ID, x: 44585, y: 56194, z: 4780, heading: 294)
+            + valeOfMularn.Offset;
 		private static IArea askefruerArea = null;
 
 		private static ItemTemplate emptyMagicBox = null;
@@ -289,7 +293,7 @@ namespace DOL.GS.Quests.Midgard
 
 			#endregion
 
-			askefruerArea = WorldMgr.GetRegion(askefruerLocation.RegionID).AddArea(new Area.Circle("Askefruer contamined Area", askefruerLocation.X, askefruerLocation.Y, 0, 1500));
+			askefruerArea = WorldMgr.GetRegion(askefruerPosition.RegionID).AddArea(new Area.Circle("Askefruer contamined Area", askefruerPosition.Coordinate, 1500));
 			askefruerArea.RegisterPlayerEnter(new DOLEventHandler(PlayerEnterAskefruerArea));
 
 			/* Now we add some hooks to the npc we found.
@@ -332,7 +336,7 @@ namespace DOL.GS.Quests.Midgard
 				return;
 
 			askefruerArea.UnRegisterPlayerEnter(new DOLEventHandler(PlayerEnterAskefruerArea));
-			WorldMgr.GetRegion(askefruerLocation.RegionID).RemoveArea(askefruerArea);
+			WorldMgr.GetRegion(askefruerPosition.RegionID).RemoveArea(askefruerArea);
 
 			/* Removing hooks works just as adding them but instead of 
 			 * AddHandler, we call RemoveHandler, the parameters stay the same
@@ -375,13 +379,9 @@ namespace DOL.GS.Quests.Midgard
 			askefruer.Name = "Fallen Askefruer";
 			askefruer.GuildName = "Part of " + questTitle + " Quest";
 			askefruer.Realm = eRealm.None;
-			askefruer.CurrentRegionID = askefruerLocation.RegionID;
 			askefruer.Size = 50;
 			askefruer.Level = 4;
-			askefruer.X = askefruerLocation.X + Util.Random(-150, 150);
-			askefruer.Y = askefruerLocation.Y + Util.Random(-150, 150);
-			askefruer.Z = askefruerLocation.Z;
-			askefruer.Heading = askefruerLocation.Heading;
+			askefruer.Position = askefruerPosition + Vector.Create(x: Util.Random(-150, 150), y: Util.Random(-150,150));
 
 			StandardMobBrain brain = new StandardMobBrain();
 			brain.AggroLevel = 20;
@@ -726,7 +726,8 @@ namespace DOL.GS.Quests.Midgard
 
 			m_questPlayer.GainExperience(GameLiving.eXPSource.Quest, 100, true);
             long money = Money.GetMoney(0, 0, 0, 3, Util.Random(50));
-			m_questPlayer.AddMoney(money, "You recieve {0} as a reward.");
+			m_questPlayer.AddMoney(Currency.Copper.Mint(money));
+			m_questPlayer.SendSystemMessage(string.Format("You recieve {0} as a reward.", Money.GetString(money)));
             InventoryLogging.LogInventoryAction("(QUEST;" + Name + ")", m_questPlayer, eInventoryActionType.Quest, money);
 
 			GameEventMgr.RemoveHandler(m_questPlayer, GamePlayerEvent.UseSlot, new DOLEventHandler(PlayerUseSlot));

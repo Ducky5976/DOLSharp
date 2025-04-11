@@ -26,6 +26,7 @@ using DOL.Database;
 using DOL.GS.Spells;
 
 using log4net;
+using DOL.GS.Geometry;
 
 namespace DOL.GS
 {
@@ -152,8 +153,9 @@ namespace DOL.GS
 		{
 			string classType = item.ClassType;
 			var itemUnique = item as ItemUnique;
+			var itemIsNoCurrency = !item.ClassType.ToLower().StartsWith("currency.");
 			
-			if (!string.IsNullOrEmpty(classType))
+			if (!string.IsNullOrEmpty(classType) && itemIsNoCurrency)
 			{
 				GameInventoryItem gameItem;
 				if (itemUnique != null)
@@ -183,8 +185,9 @@ namespace DOL.GS
 		public static GameInventoryItem Create(InventoryItem item)
 		{
 			string classType = item.Template.ClassType;
+			var itemIsNoCurrency = !item.ClassType.ToLower().StartsWith("currency.");
 			
-			if (!string.IsNullOrEmpty(classType))
+			if (!string.IsNullOrEmpty(classType) && itemIsNoCurrency)
 			{
 				GameInventoryItem gameItem = ScriptMgr.CreateObjectFromClassType<GameInventoryItem, InventoryItem>(classType, item);
 				
@@ -227,12 +230,8 @@ namespace DOL.GS
 		{
 			WorldInventoryItem worldItem = new WorldInventoryItem(this);
 
-			Point2D itemloc = player.GetPointFromHeading(player.Heading, 30);
-			worldItem.X = itemloc.X;
-			worldItem.Y = itemloc.Y;
-			worldItem.Z = player.Z;
-			worldItem.Heading = player.Heading;
-			worldItem.CurrentRegionID = player.CurrentRegionID;
+			var itemPosition = player.Position + Vector.Create(player.Orientation, length: 30);
+			worldItem.Position = itemPosition;
 
 			worldItem.AddOwner(player);
 			worldItem.AddToWorld();

@@ -33,6 +33,8 @@ using System.Reflection;
 using DOL.AI.Brain;
 using DOL.Database;
 using DOL.Events;
+using DOL.GS.Finance;
+using DOL.GS.Geometry;
 using DOL.GS.PacketHandler;
 using log4net;
 /* I suggest you declare yourself some namespaces for your quests
@@ -147,7 +149,6 @@ namespace DOL.GS.Quests.Albion
 					log.Warn("Could not find " + elvarIronhand.Name + ", creating him ...");
 				elvarIronhand.GuildName = "Part of " + questTitle + " Quest";
 				elvarIronhand.Realm = eRealm.Albion;
-				elvarIronhand.CurrentRegionID = 1;
 
 				GameNpcInventoryTemplate template = new GameNpcInventoryTemplate();
 				template.AddNPCEquipment(eInventorySlot.RightHandWeapon, 12);
@@ -156,10 +157,7 @@ namespace DOL.GS.Quests.Albion
 
 				elvarIronhand.Size = 54;
 				elvarIronhand.Level = 17;
-				elvarIronhand.X = 561351;
-				elvarIronhand.Y = 510292;
-				elvarIronhand.Z = 2400;
-				elvarIronhand.Heading = 3982;
+                elvarIronhand.Position = Position.Create(regionID: 1, x: 561351, y: 510292, z: 2400, heading: 3982);
 
 				//You don't have to store the created mob in the db if you don't want,
 				//it will be recreated each time it is not found, just comment the following
@@ -372,7 +370,7 @@ namespace DOL.GS.Quests.Albion
 						case "technique":
 							if(quest.Step == 5)
 							{
-								elvarIronhand.SayTo(player, "Thank you for your help, "+player.CharacterClass.Name+". Here's a bit of copper for your time. Keep your eyes open for a good source of horn in case the bone prototype doesn't work out.");
+								elvarIronhand.SayTo(player, "Thank you for your help, "+player.Salutation+". Here's a bit of copper for your time. Keep your eyes open for a good source of horn in case the bone prototype doesn't work out.");
 								quest.FinishQuest();
 							}
 							break;	
@@ -578,7 +576,8 @@ namespace DOL.GS.Quests.Albion
 
 			//Give reward to player here ...
 			m_questPlayer.GainExperience(GameLiving.eXPSource.Quest, 145, true);
-			m_questPlayer.AddMoney(Money.GetMoney(0, 0, 0, 0, 50), "You are awarded 50 copper!");
+			m_questPlayer.AddMoney(Currency.Copper.Mint(50));
+			m_questPlayer.SendSystemMessage(string.Format("You are awarded 50 copper!", Money.GetString(Money.GetMoney(0, 0, 0, 0, 50))));
             InventoryLogging.LogInventoryAction("(QUEST;" + Name + ")", m_questPlayer, eInventoryActionType.Quest, 50);
 		}
 	}

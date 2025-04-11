@@ -23,6 +23,8 @@ using DOL.Database;
 using DOL.Events;
 using DOL.Language;
 using DOL.GS.PacketHandler;
+using DOL.GS.Finance;
+using DOL.GS.Geometry;
 
 namespace DOL.GS.Quests
 {
@@ -225,7 +227,7 @@ namespace DOL.GS.Quests
 		public override void OnQuestAssigned(GamePlayer player)
 		{
             player.Out.SendMessage(String.Format(LanguageMgr.GetTranslation(player.Client.Account.Language, "RewardQuest.OnQuestAssigned", Name)), eChatType.CT_ScreenCenter, eChatLoc.CL_SystemWindow);
-            player.Out.SendSoundEffect(7, 0, 0, 0, 0, 0);
+            player.Out.SendSoundEffect(7, Position.Zero, 0);
 		}
 
 		/// <summary>
@@ -238,9 +240,9 @@ namespace DOL.GS.Quests
 			if (QuestPlayer.Inventory.IsSlotsFree(inventorySpaceRequired, eInventorySlot.FirstBackpack, eInventorySlot.LastBackpack))
 			{
 				base.FinishQuest();
-				QuestPlayer.Out.SendSoundEffect(11, 0, 0, 0, 0, 0);
+				QuestPlayer.Out.SendSoundEffect(11, Position.Zero, 0);
 				QuestPlayer.GainExperience(GameLiving.eXPSource.Quest, Rewards.Experience);
-				QuestPlayer.AddMoney(Rewards.Money);
+				QuestPlayer.AddMoney(Currency.Copper.Mint(Rewards.Money));
                 InventoryLogging.LogInventoryAction("(QUEST;" + Name + ")", QuestPlayer, eInventoryActionType.Quest, Rewards.Money);
 				if (Rewards.GiveBountyPoints > 0)
 					QuestPlayer.GainBountyPoints(Rewards.GiveBountyPoints);

@@ -24,6 +24,7 @@ using System.Collections.Generic;
 using DOL.AI.Brain;
 using DOL.Database;
 using DOL.GS.Effects;
+using DOL.GS.Finance;
 using DOL.GS.Housing;
 using DOL.GS.Keeps;
 using DOL.GS.PacketHandler.Client.v168;
@@ -140,7 +141,7 @@ namespace DOL.GS.Commands
 						if (respawn.Hours > 0)
 							hours = respawn.Hours + " hours ";
 						info.Add(" + Respawn: " + days + hours + respawn.Minutes + " minutes " + respawn.Seconds + " seconds");
-						info.Add(" + SpawnPoint:  " + target.SpawnPoint.X + ", " + target.SpawnPoint.Y + ", " + target.SpawnPoint.Z);
+						info.Add(" + SpawnPoint:  " + target.SpawnPosition.X + ", " + target.SpawnPosition.Y + ", " + target.SpawnPosition.Z);
 					}
 					
 					if (target.QuestListToGive.Count > 0)
@@ -223,11 +224,11 @@ namespace DOL.GS.Commands
 						info.Add(" + Equipment Template ID: " + target.EquipmentTemplateID);
 						
 					if (target.Inventory != null)
-						info.Add(" + Inventory: " + target.Inventory.AllItems.Count + " items");
+						info.Add(" + Inventory: " + target.Inventory.Count + " items");
 						
 					info.Add(" ");
 					info.Add(" + Mob_ID:  " + target.InternalID);
-					info.Add(" + Position:  " + target.X + ", " + target.Y + ", " + target.Z + ", " + target.Heading);
+					info.Add(" + Position:  " + target.Coordinate + ", " + target.Orientation.InHeading);
 					info.Add(" + OID: " + target.ObjectID);
 					info.Add(" + Package ID:  " + target.PackageID);
 					
@@ -331,7 +332,7 @@ namespace DOL.GS.Commands
 					info.Add("  - Lastname : " + target.LastName);
 					info.Add("  - Realm : " + GlobalConstants.RealmToName(target.Realm));
 					info.Add("  - Level : " + target.Level);
-					info.Add("  - Class : " + target.CharacterClass.Name);
+					info.Add("  - Class : " + target.Salutation);
 					info.Add("  - Guild : " + target.GuildName);
 					info.Add(" ");
 					info.Add("  - Account Name : " + target.AccountName);
@@ -343,11 +344,11 @@ namespace DOL.GS.Commands
 					info.Add("  - Model ID : " + target.Model);
 					info.Add("  - AFK Message: " + target.TempProperties.getProperty<string>(GamePlayer.AFK_MESSAGE) + "");
 					info.Add(" ");
-                    info.Add("  - Money : " + Money.GetString(target.GetCurrentMoney()) + "\n");
+                    info.Add("  - Money : " + Money.GetString(target.CopperBalance) + "\n");
 					info.Add("  - Speed : " + target.MaxSpeedBase);
 					info.Add("  - XPs : " + target.Experience);
 					info.Add("  - RPs : " + target.RealmPoints);
-					info.Add("  - BPs : " + target.BountyPoints);
+					info.Add("  - BPs : " + target.BountyPointBalance);
 
 					String sCurrent = "";
 					String sTitle = "";
@@ -408,7 +409,7 @@ namespace DOL.GS.Commands
 					info.Add("  --------------------------------------");
 					////////////// Inventaire /////////////
 					info.Add("  ----- Money:");
-					info.Add(Money.GetShortString(target.GetCurrentMoney()));
+					info.Add(Money.GetShortString(target.CopperBalance));
 					info.Add(" ");
 
 					info.Add("  ----- Wearing:");
@@ -449,7 +450,7 @@ namespace DOL.GS.Commands
 					}
 
 					info.Add(" ");
-					info.Add(" Location: X= " + target.X + " ,Y= " + target.Y + " ,Z= " + target.Z);
+					info.Add(" Coordinate: X= " + target.Position.X + " ,Y= " + target.Position.Y + " ,Z= " + target.Position.Z);
 				}
 
 				#endregion StaticItem
@@ -498,10 +499,10 @@ namespace DOL.GS.Commands
 					info.Add(" + Statut : " + statut);
 					info.Add(" + Type : " + DoorRequestHandler.m_handlerDoorID / 100000000);
 					info.Add(" ");
-					info.Add(" + X : " + target.X);  
-					info.Add(" + Y : " + target.Y);
-					info.Add(" + Z : " + target.Z);
-					info.Add(" + Heading : " + target.Heading);
+					info.Add(" + X : " + target.Position.X);  
+					info.Add(" + Y : " + target.Position.Y);
+					info.Add(" + Z : " + target.Position.Z);
+					info.Add(" + Heading : " + target.Orientation.InHeading);
 				}
 
 				#endregion Door
@@ -543,6 +544,8 @@ namespace DOL.GS.Commands
 					info.Add( " ");
 					info.Add( " + Climbing : " + target.Climbing);
 					info.Add( " ");
+					info.Add( " + X : " + target.Position.X);
+					info.Add( " + Y : " + target.Position.Y);
 					info.Add( " + ComponentX : " + target.ComponentX);
 					info.Add( " + ComponentY : " + target.ComponentY);
 					info.Add( " + ComponentHeading : " + target.ComponentHeading);
@@ -559,10 +562,10 @@ namespace DOL.GS.Commands
 						info.Add(" + Keep Manager : " + GameServer.KeepManager.GetType().FullName);
 						info.Add(" + Frontiers");
 					}
-					else if (GameServer.KeepManager.GetBattleground(target.CurrentRegionID) != null)
+					else if (GameServer.KeepManager.GetBattleground(target.Position.RegionID) != null)
 					{
 						info.Add(" + Keep Manager : " + GameServer.KeepManager.GetType().FullName);
-						Battleground bg = GameServer.KeepManager.GetBattleground(client.Player.CurrentRegionID);
+						Battleground bg = GameServer.KeepManager.GetBattleground(client.Player.Position.RegionID);
 						info.Add(" + Battleground (" + bg.MinLevel + " to " + bg.MaxLevel + ", max RL: " + bg.MaxRealmLevel + ")");
 					}
 					else
@@ -696,12 +699,13 @@ namespace DOL.GS.Commands
 					info.Add(" Zone ID: "+ client.Player.CurrentZone.ID);
 					info.Add(" Zone IsDungeon: "+ client.Player.CurrentZone.IsDungeon);
 					info.Add(" Zone SkinID: "+ client.Player.CurrentZone.ZoneSkinID);
-					info.Add(" Zone X: "+ client.Player.CurrentZone.XOffset);
-					info.Add(" Zone Y: "+ client.Player.CurrentZone.YOffset);
+					info.Add(" Zone X: "+ client.Player.CurrentZone.Offset.X);
+					info.Add(" Zone Y: "+ client.Player.CurrentZone.Offset.Y);
 					info.Add(" Zone Width: "+ client.Player.CurrentZone.Width);
 					info.Add(" Zone Height: "+ client.Player.CurrentZone.Height);
 					info.Add(" Zone DivingEnabled: " + client.Player.CurrentZone.IsDivingEnabled);
 					info.Add(" Zone Waterlevel: " + client.Player.CurrentZone.Waterlevel);
+					info.Add(" Zone Pathing: " + (PathingMgr.Instance.HasNavmesh(client.Player.CurrentZone) ? "enabled" : "disabled"));
 					info.Add(" ");
 					info.Add(" Region Name: "+ client.Player.CurrentRegion.Name);
                     info.Add(" Region Description: " + client.Player.CurrentRegion.Description);

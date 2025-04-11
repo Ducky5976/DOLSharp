@@ -21,6 +21,7 @@ using System.Reflection;
 using DOL.GS.PlayerTitles;
 using log4net;
 using DOL.GS.Housing;
+using DOL.GS.Finance;
 
 namespace DOL.GS.PacketHandler
 {
@@ -57,9 +58,9 @@ namespace DOL.GS.PacketHandler
 				pak.WriteByte(player.GetDisplayLevel(m_gameClient.Player)); //level
 				pak.WritePascalString(player.Name); // player name
 				pak.WriteByte((byte) (player.MaxHealth >> 8)); // maxhealth high byte ?
-				pak.WritePascalString(player.CharacterClass.Name); // class name
+				pak.WritePascalString(player.Salutation); // class name
 				pak.WriteByte((byte) (player.MaxHealth & 0xFF)); // maxhealth low byte ?
-				pak.WritePascalString( /*"The "+*/player.CharacterClass.Profession); // Profession
+				pak.WritePascalString( /*"The "+*/player.CharacterClass.GetProfessionTitle(player)); // Profession
 				pak.WriteByte(0x00); //unk
 	            pak.WritePascalString(player.CharacterClass.GetTitle(player, player.Level)); // player level
 				//todo make function to calcule realm rank
@@ -120,7 +121,7 @@ namespace DOL.GS.PacketHandler
 				pak.WriteInt((uint)m_gameClient.Player.RealmPoints);
 				pak.WriteShort(m_gameClient.Player.LevelPermill);
 				pak.WriteShort((ushort) m_gameClient.Player.SkillSpecialtyPoints);
-				pak.WriteInt((uint)m_gameClient.Player.BountyPoints);
+				pak.WriteInt((uint)m_gameClient.Player.BountyPointBalance);
 				pak.WriteShort((ushort) m_gameClient.Player.RealmSpecialtyPoints);
 				pak.WriteShort(m_gameClient.Player.ChampionLevelPermill);
 				SendTCP(pak);

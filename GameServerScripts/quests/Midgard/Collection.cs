@@ -35,6 +35,8 @@ using System.Reflection;
 using DOL.AI.Brain;
 using DOL.Database;
 using DOL.Events;
+using DOL.GS.Finance;
+using DOL.GS.Geometry;
 using DOL.GS.PacketHandler;
 using log4net;
 /* I suggest you declare yourself some namespaces for your quests
@@ -79,7 +81,7 @@ namespace DOL.GS.Quests.Midgard
 
 		private static GameNPC[] general = new GameNPC[3];
 		private static String[] generalNames = {"Mitan", "Ostadi", "Seiki"};
-		private static GameLocation[] generalLocations = new GameLocation[3];
+		private static Position[] generalLocations = new Position[3];
 
 		private static ItemTemplate askefruerWings = null;
 		private static ItemTemplate dustyOldMap = null;
@@ -143,9 +145,25 @@ namespace DOL.GS.Quests.Midgard
 
 			#region defineNPCs
 
-			generalLocations[0] = new GameLocation(generalNames[0], 100, 100, 40124, 44594, 4712, 216);
-			generalLocations[1] = new GameLocation(generalNames[1], 100, 100, 46821, 40884, 4972, 21);
-			generalLocations[2] = new GameLocation(generalNames[2], 100, 100, 56104, 43865, 5460, 48);
+            var valeOfMularn = WorldMgr.GetZone(100);
+            generalLocations[0] = Position.Create(
+                    regionID: valeOfMularn.ZoneRegion.ID,
+                    x: 40124 + valeOfMularn.Offset.X,
+                    y: 44594 + valeOfMularn.Offset.Y,
+                    z: 4712,
+                    heading: 216);
+            generalLocations[1] = Position.Create(
+                    regionID: valeOfMularn.ZoneRegion.ID,
+                    x: 46821 + valeOfMularn.Offset.X,
+                    y: 40884 + valeOfMularn.Offset.Y,
+                    z: 4972,
+                    heading: 21);
+            generalLocations[2] = Position.Create(
+                    regionID: valeOfMularn.ZoneRegion.ID,
+                    x: 56104 + valeOfMularn.Offset.X,
+                    y: 43865 + valeOfMularn.Offset.Y,
+                    z: 5460,
+                    heading: 48);
 
 			GameNPC[] npcs = null;
 			for (int i = 0; i < general.Length; i++)
@@ -163,13 +181,9 @@ namespace DOL.GS.Quests.Midgard
 
 					general[i].GuildName = "Part of " + questTitle + " Quest";
 					general[i].Name = generalNames[i];
-					general[i].X = generalLocations[i].X;
-					general[i].Y = generalLocations[i].Y;
-					general[i].Z = generalLocations[i].Z;
-					general[i].Heading = generalLocations[i].Heading;
+					general[i].Position = generalLocations[i];
 
 					general[i].Realm = eRealm.None;
-					general[i].CurrentRegionID = generalLocations[i].RegionID;
 					general[i].Size = 49;
 					general[i].Level = 2;
 
@@ -804,7 +818,8 @@ namespace DOL.GS.Quests.Midgard
 
 			m_questPlayer.GainExperience(GameLiving.eXPSource.Quest, 240, true);
             long money = Money.GetMoney(0, 0, 0, 6, Util.Random(50));
-			m_questPlayer.AddMoney(money, "You recieve {0} as a reward.");
+			m_questPlayer.AddMoney(Currency.Copper.Mint(money));
+			m_questPlayer.SendSystemMessage(string.Format("You recieve {0} as a reward.", Money.GetString(money)));
             InventoryLogging.LogInventoryAction("(QUEST;" + Name + ")", m_questPlayer, eInventoryActionType.Quest, money);
 
 			GameEventMgr.RemoveHandler(m_questPlayer, GamePlayerEvent.UseSlot, new DOLEventHandler(PlayerUseSlot));

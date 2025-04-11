@@ -26,6 +26,8 @@ using DOL.GS.PacketHandler;
 using System.Collections;
 using log4net;
 using System.Linq;
+using DOL.GS.Finance;
+using DOL.GS.Geometry;
 
 namespace DOL.GS
 {
@@ -65,16 +67,16 @@ namespace DOL.GS
 			if (amountToBuy <= 0) return;
 
 			//Calculate the value of items
-			long totalValue = number * template.Price;
+			var totalCost = Currency.Copper.Mint(number * template.Price);
 
 			GameInventoryItem item = GameInventoryItem.Create(template);
 
 			lock (player.Inventory)
 			{
 
-				if (player.GetCurrentMoney() < totalValue)
+				if (player.CopperBalance < totalCost.Amount)
 				{
-					player.Out.SendMessage(LanguageMgr.GetTranslation(player.Client.Account.Language, "GameMerchant.OnPlayerBuy.YouNeed", Money.GetString(totalValue)), eChatType.CT_System, eChatLoc.CL_SystemWindow);
+					player.Out.SendMessage(LanguageMgr.GetTranslation(player.Client.Account.Language, "GameMerchant.OnPlayerBuy.YouNeed", totalCost.ToText()), eChatType.CT_System, eChatLoc.CL_SystemWindow);
 					return;
 				}
 
@@ -87,16 +89,17 @@ namespace DOL.GS
 				//Generate the buy message
 				string message;
 				if (amountToBuy > 1)
-					message = LanguageMgr.GetTranslation(player.Client.Account.Language, "GameMerchant.OnPlayerBuy.BoughtPieces", amountToBuy, template.GetName(1, false), Money.GetString(totalValue));
+					message = LanguageMgr.GetTranslation(player.Client.Account.Language, "GameMerchant.OnPlayerBuy.BoughtPieces", amountToBuy, template.GetName(1, false), totalCost.ToText());
 				else
-					message = LanguageMgr.GetTranslation(player.Client.Account.Language, "GameMerchant.OnPlayerBuy.Bought", template.GetName(1, false), Money.GetString(totalValue));
+					message = LanguageMgr.GetTranslation(player.Client.Account.Language, "GameMerchant.OnPlayerBuy.Bought", template.GetName(1, false), totalCost.ToText());
 
 				// Check if player has enough money and subtract the money
-				if (!player.RemoveMoney(totalValue, message, eChatType.CT_Merchant, eChatLoc.CL_SystemWindow))
+				if (!player.RemoveMoney(totalCost))
 				{
 					throw new Exception("Money amount changed while adding items.");
 				}
-				InventoryLogging.LogInventoryAction(player, this, eInventoryActionType.Merchant, totalValue);
+				player.SendMessage(message, eChatType.CT_Merchant, eChatLoc.CL_SystemWindow);
+				InventoryLogging.LogInventoryAction(player, this, eInventoryActionType.Merchant, totalCost.Amount);
 			}
 
 			if (item.Name.ToUpper().Contains("TICKET TO") || item.Description.ToUpper() == "TICKET")
@@ -127,7 +130,7 @@ namespace DOL.GS
 				{
 					PathPoint path = MovementMgr.LoadPath(item.Id_nb);
 
-					if ((path != null) && ((Math.Abs(path.X - this.X)) < 500) && ((Math.Abs(path.Y - this.Y)) < 500))
+					if ((path != null) && ((Math.Abs(path.Coordinate.X - Coordinate.X)) < 500) && ((Math.Abs(path.Coordinate.Y - Coordinate.Y)) < 500))
 					{
 						player.Inventory.RemoveCountFromStack(item, 1);
                         InventoryLogging.LogInventoryAction(player, this, eInventoryActionType.Merchant, item.Template);
@@ -205,11 +208,7 @@ namespace DOL.GS
 						}
 
 						mount.Realm = source.Realm;
-						mount.X = path.X;
-						mount.Y = path.Y;
-						mount.Z = path.Z;
-						mount.CurrentRegion = CurrentRegion;
-						mount.Heading = path.GetHeading( path.Next );
+						mount.Position = Position.Create(CurrentRegion.ID, path.Coordinate, path.AngleToNextPathPoint);
 						mount.AddToWorld();
 						mount.CurrentWayPoint = path;
 						GameEventMgr.AddHandler(mount, GameNPCEvent.PathMoveEnds, new DOLEventHandler(OnHorseAtPathEnd));

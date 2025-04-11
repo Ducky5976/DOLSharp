@@ -35,6 +35,8 @@ using System.Reflection;
 using DOL.AI.Brain;
 using DOL.Database;
 using DOL.Events;
+using DOL.GS.Finance;
+using DOL.GS.Geometry;
 using DOL.GS.PacketHandler;
 using log4net;
 /* I suggest you declare yourself some namespaces for your quests
@@ -152,7 +154,6 @@ namespace DOL.GS.Quests.Albion
 					log.Warn("Could not find " + andrewWyatt.Name + ", creating him ...");
 				andrewWyatt.GuildName = "Part of " + questTitle + " Quest";
 				andrewWyatt.Realm = eRealm.Albion;
-				andrewWyatt.CurrentRegionID = 1;
 
 				GameNpcInventoryTemplate template = new GameNpcInventoryTemplate();
 				template.AddNPCEquipment(eInventorySlot.HandsArmor, 80);
@@ -164,10 +165,7 @@ namespace DOL.GS.Quests.Albion
 
 				andrewWyatt.Size = 48;
 				andrewWyatt.Level = 30;
-				andrewWyatt.X = 559590;
-				andrewWyatt.Y = 511039;
-				andrewWyatt.Z = 2488;
-				andrewWyatt.Heading = 1524;
+                andrewWyatt.Position = Position.Create(regionID: 1, x: 559590, y: 511039, z: 2488, heading: 1524);
 
 				//You don't have to store the created mob in the db if you don't want,
 				//it will be recreated each time it is not found, just comment the following
@@ -191,7 +189,6 @@ namespace DOL.GS.Quests.Albion
 				georNadren.Name = "Geor Nadren";
 				georNadren.GuildName = "Part of " + questTitle + " Quest";
 				georNadren.Realm = eRealm.Albion;
-				georNadren.CurrentRegionID = 10;
 
 				GameNpcInventoryTemplate template = new GameNpcInventoryTemplate();
 				template.AddNPCEquipment(eInventorySlot.HandsArmor, 39);
@@ -204,10 +201,7 @@ namespace DOL.GS.Quests.Albion
 
 				georNadren.Size = 51;
 				georNadren.Level = 8;
-				georNadren.X = 37355;
-				georNadren.Y = 30943;
-				georNadren.Z = 8002;
-				georNadren.Heading = 3231;
+                georNadren.Position = Position.Create(regionID: 10, x: 37355, y: 30943, z: 8002, heading: 3231);
 
 				//You don't have to store the created mob in the db if you don't want,
 				//it will be recreated each time it is not found, just comment the following
@@ -230,7 +224,6 @@ namespace DOL.GS.Quests.Albion
 				verNuren.Name = "Ver Nuren";
 				verNuren.GuildName = "Part of " + questTitle + " Quest";
 				verNuren.Realm = eRealm.Albion;
-				verNuren.CurrentRegionID = 10;
 
 				GameNpcInventoryTemplate template = new GameNpcInventoryTemplate();
 				template.AddNPCEquipment(eInventorySlot.LeftHandWeapon, 61);
@@ -244,10 +237,7 @@ namespace DOL.GS.Quests.Albion
 
 				verNuren.Size = 51;
 				verNuren.Level = 8;
-				verNuren.X = 36799;
-				verNuren.Y = 30786;
-				verNuren.Z = 8010;
-				verNuren.Heading = 625;
+                verNuren.Position = Position.Create(regionID: 10, x: 36799, y: 30786, z: 8010, heading: 625);
 
 				//You don't have to store the created mob in the db if you don't want,
 				//it will be recreated each time it is not found, just comment the following
@@ -609,7 +599,8 @@ namespace DOL.GS.Quests.Albion
 
 								player.GainExperience(GameLiving.eXPSource.Quest, 40, true);
 							    long money = Money.GetMoney(0, 0, 0, 3, Util.Random(50));
-								player.AddMoney(money, "You are awarded 3 silver and some copper!");
+								player.AddMoney(Currency.Copper.Mint(money));
+								player.SendSystemMessage(string.Format("You are awarded 3 silver and some copper!", Money.GetString(money)));
                                 InventoryLogging.LogInventoryAction("(QUEST;" + quest.Name + ")", player, eInventoryActionType.Quest, money);
 
 								quest.Step = 3;
@@ -766,7 +757,8 @@ namespace DOL.GS.Quests.Albion
 
 						m_questPlayer.GainExperience(GameLiving.eXPSource.Quest, 40, true);
 					    long money = Money.GetMoney(0, 0, 0, 2, Util.Random(50));
-						m_questPlayer.AddMoney(money, "You are awarded 2 silver and some copper!");
+						m_questPlayer.AddMoney(Currency.Copper.Mint(money));
+						m_questPlayer.SendSystemMessage(string.Format("You are awarded 2 silver and some copper!", Money.GetString(money)));
                         InventoryLogging.LogInventoryAction("(QUEST;" + Name + ")", m_questPlayer, eInventoryActionType.Quest, money);
 
 						Step = 4;
@@ -796,7 +788,8 @@ namespace DOL.GS.Quests.Albion
 
 			m_questPlayer.GainExperience(GameLiving.eXPSource.Quest, 80, true);
 		    long money = Money.GetMoney(0, 0, 0, 4, Util.Random(50));
-			m_questPlayer.AddMoney(money, "You are awarded 4 silver and some copper!");
+			m_questPlayer.AddMoney(Currency.Copper.Mint(money));
+			m_questPlayer.SendSystemMessage(string.Format("You are awarded 4 silver and some copper!", Money.GetString(money)));
             InventoryLogging.LogInventoryAction("(QUEST;" + Name + ")", m_questPlayer, eInventoryActionType.Quest, money);
 		}
 	}

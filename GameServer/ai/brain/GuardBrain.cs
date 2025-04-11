@@ -40,9 +40,7 @@ namespace DOL.AI.Brain
 
 		protected override void CheckPlayerAggro()
 		{
-			//Check if we are already attacking, return if yes
-			if (Body.AttackState)
-				return;
+			if (HasAggro) return;
 
 			foreach (GamePlayer player in Body.GetPlayersInRadius((ushort)AggroRange))
 			{
@@ -57,29 +55,27 @@ namespace DOL.AI.Brain
 				if (!Body.IsWithinRadius(player, AggroRange))
 					continue;
 
-				AddToAggroList(player, player.EffectiveLevel << 1);
+				AddToAggroList(player, 1);
 				return;
 			}
 		}
 
 		protected override void CheckNPCAggro()
 		{
-			//Check if we are already attacking, return if yes
-			if (Body.AttackState)
-				return;
+			if (HasAggro) return;
 
 			foreach (GameNPC npc in Body.GetNPCsInRadius((ushort)AggroRange))
 			{
 				if (m_aggroTable.ContainsKey(npc))
 					continue; // add only new npcs
-				if ((npc.Flags & GameNPC.eFlags.FLYING) != 0)
+				if (npc.IsFlying)
 					continue; // let's not try to attack flying mobs
 				if (!GameServer.ServerRules.IsAllowedToAttack(Body, npc, true))
 					continue;
 				if (!npc.IsWithinRadius(Body, AggroRange))
 					continue;
 
-				AddToAggroList(npc, npc.Level << 1);
+				AddToAggroList(npc, 1);
 				return;
 			}
 		}

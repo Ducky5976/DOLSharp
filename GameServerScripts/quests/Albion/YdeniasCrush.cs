@@ -34,6 +34,8 @@ using System.Reflection;
 using DOL.AI.Brain;
 using DOL.Database;
 using DOL.Events;
+using DOL.GS.Finance;
+using DOL.GS.Geometry;
 using DOL.GS.PacketHandler;
 using log4net;
 /* I suggest you declare yourself some namespaces for your quests
@@ -150,7 +152,6 @@ namespace DOL.GS.Quests.Albion
 					log.Warn("Could not find " + ydeniaPhilpott.Name + ", creating him ...");
 				ydeniaPhilpott.GuildName = "Part of " + questTitle + " Quest";
 				ydeniaPhilpott.Realm = eRealm.Albion;
-				ydeniaPhilpott.CurrentRegionID = 1;
 
 				GameNpcInventoryTemplate template = new GameNpcInventoryTemplate();
 				template.AddNPCEquipment(eInventorySlot.TwoHandWeapon, 227);
@@ -165,10 +166,7 @@ namespace DOL.GS.Quests.Albion
 
 				ydeniaPhilpott.Size = 51;
 				ydeniaPhilpott.Level = 40;
-				ydeniaPhilpott.X = 559315;
-				ydeniaPhilpott.Y = 510705;
-				ydeniaPhilpott.Z = 2488;
-				ydeniaPhilpott.Heading = 3993;
+                ydeniaPhilpott.Position = Position.Create(regionID: 1, x: 559315, y: 510705, z: 2488, heading: 3993);
 
 				//You don't have to store the created mob in the db if you don't want,
 				//it will be recreated each time it is not found, just comment the following
@@ -192,7 +190,6 @@ namespace DOL.GS.Quests.Albion
 				elvarTambor.Name = "Elvar Tambor";
 				elvarTambor.GuildName = "Part of " + questTitle + " Quest";
 				elvarTambor.Realm = eRealm.Albion;
-				elvarTambor.CurrentRegionID = 1;
 
 				GameNpcInventoryTemplate template = new GameNpcInventoryTemplate();
 				template.AddNPCEquipment(eInventorySlot.RightHandWeapon, 3);
@@ -206,10 +203,7 @@ namespace DOL.GS.Quests.Albion
 
 				elvarTambor.Size = 50;
 				elvarTambor.Level = 15;
-				elvarTambor.X = 574711;
-				elvarTambor.Y = 529887;
-				elvarTambor.Z = 2896;
-				elvarTambor.Heading = 2366;
+                elvarTambor.Position = Position.Create(regionID: 1, x: 574711, y: 529887, z: 2896, heading: 2366);
 
 				//You don't have to store the created mob in the db if you don't want,
 				//it will be recreated each time it is not found, just comment the following
@@ -519,7 +513,8 @@ namespace DOL.GS.Quests.Albion
 							{
 								player.GainExperience(GameLiving.eXPSource.Quest, 10, true);
                                 long money = Money.GetMoney(0, 0, 0, 2, Util.Random(50));
-								player.AddMoney(money, "You are awarded 2 silver and some copper!");
+								player.AddMoney(Currency.Copper.Mint(money));
+								player.SendSystemMessage("You are awarded 2 silver and some copper!");
                                 InventoryLogging.LogInventoryAction("(QUEST;" + quest.Name + ")", player, eInventoryActionType.Quest, money);
 
 								// give letter                
@@ -704,7 +699,8 @@ namespace DOL.GS.Quests.Albion
 
 			m_questPlayer.GainExperience(GameLiving.eXPSource.Quest, 20 + (m_questPlayer.Level - 1) * 5, true);
             long money = Money.GetMoney(0, 0, 0, 5, Util.Random(50));
-			m_questPlayer.AddMoney(money, "You are awarded 5 silver and some copper!");
+			m_questPlayer.AddMoney(Currency.Copper.Mint(money));
+			m_questPlayer.SendSystemMessage(string.Format("You are awarded 5 silver and some copper!", Money.GetString(money)));
             InventoryLogging.LogInventoryAction("(QUEST;" + Name + ")", m_questPlayer, eInventoryActionType.Quest, money);
 		}
 	}

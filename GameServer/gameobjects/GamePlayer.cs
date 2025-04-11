@@ -29,6 +29,8 @@ using DOL.AI.Brain;
 using DOL.Database;
 using DOL.Events;
 using DOL.GS.Effects;
+using DOL.GS.Finance;
+using DOL.GS.Geometry;
 using DOL.GS.Housing;
 using DOL.GS.Keeps;
 using DOL.GS.PacketHandler;
@@ -457,61 +459,69 @@ namespace DOL.GS
 			set { if (DBCharacter != null) DBCharacter.UsedLevelCommand = value; }
 		}
 
-		/// <summary>
-		/// Gets or sets the BindHouseRegion for this player
-		/// (delegate to property in DBCharacter)
-		/// </summary>
-		public int BindHouseRegion
-		{
-			get { return DBCharacter != null ? DBCharacter.BindHouseRegion : 0; }
-			set { if (DBCharacter != null) DBCharacter.BindHouseRegion = value; }
-		}
+        public Position BindHousePosition
+        {
+            get
+            {
+                if (DBCharacter == null) return Position.Zero;
 
-		/// <summary>
-		/// Gets or sets the BindHouseXpos for this player
-		/// (delegate to property in DBCharacter)
-		/// </summary>
-		public int BindHouseXpos
-		{
-			get { return DBCharacter != null ? DBCharacter.BindHouseXpos : 0; }
-			set { if (DBCharacter != null) DBCharacter.BindHouseXpos = value; }
-		}
+                return Position.Create(
+                    (ushort)DBCharacter.BindHouseRegion,
+                    DBCharacter.BindHouseXpos,
+                    DBCharacter.BindHouseYpos,
+                    DBCharacter.BindHouseZpos,
+                    (ushort)DBCharacter.BindHouseHeading);
+            }
+            set
+            {
+                DBCharacter.BindHouseRegion = value.RegionID;
+                DBCharacter.BindHouseXpos = value.X;
+                DBCharacter.BindHouseYpos = value.Y;
+                DBCharacter.BindHouseZpos = value.Z;
+                DBCharacter.BindHouseHeading = value.Orientation.InHeading;
+            }
+        }
 
-		/// <summary>
-		/// Gets or sets the BindHouseYpos for this player
-		/// (delegate to property in DBCharacter)
-		/// </summary>
-		public int BindHouseYpos
-		{
-			get { return DBCharacter != null ? DBCharacter.BindHouseYpos : 0; }
-			set { if (DBCharacter != null) DBCharacter.BindHouseYpos = value; }
-		}
+        [Obsolete("Use BindHousePosition instead!")]
+        public int BindHouseRegion
+        {
+            get => BindHousePosition.RegionID;
+            set => BindHousePosition.With(regionID: (ushort)value);
+        }
 
-		/// <summary>
-		/// Gets or sets BindHouseZpos for this player
-		/// (delegate to property in DBCharacter)
-		/// </summary>
-		public int BindHouseZpos
-		{
-			get { return DBCharacter != null ? DBCharacter.BindHouseZpos : 0; }
-			set { if (DBCharacter != null) DBCharacter.BindHouseZpos = value; }
-		}
-		
-		/// <summary>
-		/// Gets or sets the BindHouseHeading for this player
-		/// (delegate to property in DBCharacter)
-		/// </summary>
-		public int BindHouseHeading
-		{
-			get { return DBCharacter != null ? DBCharacter.BindHouseHeading : 0; }
-			set { if (DBCharacter != null) DBCharacter.BindHouseHeading = value; }
-		}
-		
-		/// <summary>
-		/// Gets or sets the CustomisationStep for this player
-		/// (delegate to property in DBCharacter)
-		/// </summary>
-		public byte CustomisationStep
+        [Obsolete("Use BindHousePosition instead!")]
+        public int BindHouseXpos
+        {
+            get => BindHousePosition.X;
+            set => BindHousePosition.With(x: value);
+        }
+
+        [Obsolete("Use BindHousePosition instead!")]
+        public int BindHouseYpos
+        {
+            get => BindHousePosition.Y;
+            set => BindHousePosition.With(y: value);
+        }
+
+        [Obsolete("Use BindHousePosition instead!")]
+        public int BindHouseZpos
+        {
+            get => BindHousePosition.Z;
+            set => BindHousePosition.With(z: value);
+        }
+
+        [Obsolete("Use BindHousePosition instead!")]
+        public int BindHouseHeading
+        {
+            get => BindHousePosition.Orientation.InHeading;
+            set => BindHousePosition.With(Angle.Heading(value));
+        }
+
+        /// <summary>
+        /// Gets or sets the CustomisationStep for this player
+        /// (delegate to property in DBCharacter)
+        /// </summary>
+        public byte CustomisationStep
 		{
 			get { return DBCharacter != null ? DBCharacter.CustomisationStep : (byte)0; }
 			set { if (DBCharacter != null) DBCharacter.CustomisationStep = value; }
@@ -547,50 +557,55 @@ namespace DOL.GS
 			set { if (DBCharacter != null) DBCharacter.ShowXFireInfo = value; }
 		}
 
-		/// <summary>
-		/// Gets or sets the BindRegion for this player
-		/// (delegate to property in DBCharacter)
-		/// </summary>
+        public Position BindPosition
+        {
+            get
+            {
+                if(DBCharacter == null) return Position.Zero;
+                
+                return DBCharacter.GetBindPosition();
+            }
+            set
+            {
+                if (DBCharacter == null) return;
+
+                DBCharacter.BindRegion = value.RegionID;
+                DBCharacter.BindXpos = value.X;
+                DBCharacter.BindYpos = value.Y;
+                DBCharacter.BindZpos = value.Z;
+                DBCharacter.BindHeading = value.Orientation.InHeading;
+            }
+        }
+
+        [Obsolete("Use BindPosition instead!")]
 		public int BindRegion
 		{
 			get { return DBCharacter != null ? DBCharacter.BindRegion : 0; }
 			set { if (DBCharacter != null) DBCharacter.BindRegion = value; }
 		}
 
-		/// <summary>
-		/// Gets or sets the BindXpos for this player
-		/// (delegate to property in DBCharacter)
-		/// </summary>
+        [Obsolete("Use BindPosition instead!")]
 		public int BindXpos
 		{
 			get { return DBCharacter != null ? DBCharacter.BindXpos : 0; }
 			set { if (DBCharacter != null) DBCharacter.BindXpos = value; }
 		}
 
-		/// <summary>
-		/// Gets or sets the BindYpos for this player
-		/// (delegate to property in DBCharacter)
-		/// </summary>
+        [Obsolete("Use BindPosition instead!")]
 		public int BindYpos
 		{
 			get { return DBCharacter != null ? DBCharacter.BindYpos : 0; }
 			set { if (DBCharacter != null) DBCharacter.BindYpos = value; }
 		}
 
-		/// <summary>
-		/// Gets or sets the BindZpos for this player
-		/// (delegate to property in DBCharacter)
-		/// </summary>
+        [Obsolete("Use BindPosition instead!")]
 		public int BindZpos
 		{
 			get { return DBCharacter != null ? DBCharacter.BindZpos : 0; }
 			set { if (DBCharacter != null) DBCharacter.BindZpos = value; }
 		}
 
-		/// <summary>
-		/// Gets or sets the BindHeading for this player
-		/// (delegate to property in DBCharacter)
-		/// </summary>
+        [Obsolete("Use BindPosition instead!")]
 		public int BindHeading
 		{
 			get { return DBCharacter != null ? DBCharacter.BindHeading : 0; }
@@ -769,9 +784,9 @@ namespace DOL.GS
 				log.InfoFormat("Player {0}({1}) went linkdead!", Name, Client.Account.Name);
 
 			// LD Necros need to be "Unshaded"
-			if (Client.Player.CharacterClass.Player.IsShade)
+			if (IsShade)
 			{
-				Client.Player.CharacterClass.Player.Shade(false);
+				Shade(false);
 			}
 
 			// Dead link-dead players release on live servers
@@ -836,7 +851,7 @@ namespace DOL.GS
 
 		private void CheckIfNearEnemyKeepAndAddToRvRLinkDeathListIfNecessary()
 		{
-			AbstractGameKeep keep = GameServer.KeepManager.GetKeepCloseToSpot(this.CurrentRegionID, this, WorldMgr.VISIBILITY_DISTANCE);
+			AbstractGameKeep keep = GameServer.KeepManager.GetKeepCloseToSpot(Position, WorldMgr.VISIBILITY_DISTANCE);
 			if(keep != null && this.Client.Account.PrivLevel == 1 && GameServer.KeepManager.IsEnemy(keep, this))
 			{
 				if(WorldMgr.RvRLinkDeadPlayers.ContainsKey(this.m_InternalID))
@@ -907,11 +922,7 @@ namespace DOL.GS
 			// DamienOphyr: Overwrite current position with Bind position in database, MoveTo() is inoperant
 			if (CurrentRegion.IsInstance)
 			{
-				DBCharacter.Region = BindRegion;
-				DBCharacter.Xpos = BindXpos;
-				DBCharacter.Ypos =  BindYpos;
-				DBCharacter.Zpos = BindZpos;
-				DBCharacter.Direction = BindHeading;
+                Position = BindPosition;
 			}
 			
 			//check for battleground caps
@@ -1171,11 +1182,7 @@ namespace DOL.GS
 
 			if (forced)
 			{
-				BindRegion = CurrentRegionID;
-				BindHeading = Heading;
-				BindXpos = X;
-				BindYpos = Y;
-				BindZpos = Z;
+                BindPosition = Position;
 				if (DBCharacter != null)
 					GameServer.Database.SaveObject(DBCharacter);
 				return;
@@ -1195,8 +1202,9 @@ namespace DOL.GS
 				Out.SendMessage(LanguageMgr.GetTranslation(Client.Account.Language, "GamePlayer.Bind.MustWait", (1 + (BindAllowInterval - changeTime) / 1000)), eChatType.CT_System, eChatLoc.CL_SystemWindow);
 				return;
 			}
-			
-			string description = string.Format("in {0}", this.GetBindSpotDescription());
+
+            var spotDescription = WorldMgr.GetRegion(BindPosition.RegionID).GetTranslatedSpotDescription(Client, BindPosition.Coordinate);
+            string description = string.Format("in {0}", spotDescription);
 			Out.SendMessage(LanguageMgr.GetTranslation(Client.Account.Language, "GamePlayer.Bind.LastBindPoint", description), eChatType.CT_System, eChatLoc.CL_SystemWindow);
 			
 			bool bound = false;
@@ -1205,11 +1213,7 @@ namespace DOL.GS
 			if (bindarea != null)
 			{
 				bound = true;
-				BindRegion = CurrentRegionID;
-				BindHeading = Heading;
-				BindXpos = X;
-				BindYpos = Y;
-				BindZpos = Z;
+                BindPosition = Position;
 				if (DBCharacter != null)
 					GameServer.Database.SaveObject(DBCharacter);
 			}
@@ -1239,15 +1243,7 @@ namespace DOL.GS
 					else
 					{
 						bound = true;
-						double angle = house.Heading * ((Math.PI * 2) / 360); // angle*2pi/360;
-						int outsideX = (int)(house.X + (0 * Math.Cos(angle) + 500 * Math.Sin(angle)));
-						int outsideY = (int)(house.Y - (500 * Math.Cos(angle) - 0 * Math.Sin(angle)));
-						ushort outsideHeading = (ushort)((house.Heading < 180 ? house.Heading + 180 : house.Heading - 180) / 0.08789);
-						BindHouseRegion = CurrentRegionID;
-						BindHouseHeading = outsideHeading;
-						BindHouseXpos = outsideX;
-						BindHouseYpos = outsideY;
-						BindHouseZpos = house.Z;
+                        BindHousePosition = house.OutdoorJumpPosition;
 						if (DBCharacter != null)
 							GameServer.Database.SaveObject(DBCharacter);
 					}
@@ -1458,53 +1454,36 @@ namespace DOL.GS
 				m_releaseType = releaseCommand;
 			}
 
-			int relX = 0, relY = 0, relZ = 0;
-			ushort relRegion = 0, relHeading = 0;
+            var releasePosition = Position.Zero;
 			switch (m_releaseType)
 			{
 				case eReleaseType.Duel:
 					{
-						relRegion = (ushort)character.Region;
-						relX = character.Xpos;
-						relY = character.Ypos;
-						relZ = character.Zpos;
-						relHeading = 2048;
+                        releasePosition = character.GetPosition().With(Angle.Degrees(180));
 						break;
 					}
 				case eReleaseType.House:
 					{
-						relRegion = (ushort)BindHouseRegion;
-						relX = BindHouseXpos;
-						relY = BindHouseYpos;
-						relZ = BindHouseZpos;
-						relHeading = (ushort)BindHouseHeading;
+                        releasePosition = BindHousePosition;
 						break;
 					}
-					
 				case eReleaseType.City:
 					{
 						if (Realm == eRealm.Hibernia)
 						{
-							relRegion = 201; // Tir Na Nog
-							relX = 8192 + 15780;
-							relY = 8192 + 22727;
-							relZ = 7060;
+							// Tir Na Nog
+                            releasePosition = Position.Create(regionID: 201, x: 192 + 15780, y: 8192 + 22727, z: 7060, heading: 2048);
 						}
 						else if (Realm == eRealm.Midgard)
 						{
-							relRegion = 101; // Jordheim
-							relX = 8192 + 24664;
-							relY = 8192 + 21402;
-							relZ = 8759;
+							// Jordheim
+                            releasePosition = Position.Create(regionID: 101, x: 8192 + 24664, y: 8192 + 21402, z: 8759, heading: 2048);
 						}
 						else
 						{
-							relRegion = 10; // City of Camelot
-							relX = 8192 + 26315;
-							relY = 8192 + 21177;
-							relZ = 8256;
+							// City of Camelot
+                            releasePosition = Position.Create(regionID: 10, x: 8192 + 26315, y: 8192 + 21177, z: 8256, heading: 2048);
 						}
-						relHeading = 2048;
 						break;
 					}
 				case eReleaseType.RvR:
@@ -1513,18 +1492,14 @@ namespace DOL.GS
 						{
 							if (keep.IsPortalKeep && keep.OriginalRealm == Realm)
 							{
-								relRegion = keep.CurrentRegion.ID;
-								relX = keep.X;
-								relY = keep.Y;
-								relZ = keep.Z;
+                                releasePosition = Position.Create(keep.CurrentRegion.ID, keep.X, keep.Y, keep.Z);
 							}
 						}
 
 						//if we aren't releasing anywhere, release to the border keeps
-						if (relX == 0)
+						if (releasePosition.Coordinate == Coordinate.Zero)
 						{
-							relRegion = CurrentRegion.ID;
-							GameServer.KeepManager.GetBorderKeepLocation(((byte)Realm * 2) / 1, out relX, out relY, out relZ, out relHeading);
+							releasePosition = GameServer.KeepManager.GetBorderKeepPosition(((byte)Realm * 2) / 1);
 						}
 						break;
 					}
@@ -1533,32 +1508,26 @@ namespace DOL.GS
 						if (!ServerProperties.Properties.DISABLE_TUTORIAL)
 						{
 							//Tutorial
-							if (BindRegion == 27)
+							if (BindPosition.RegionID == 27)
 							{
 								switch (Realm)
 								{
 									case eRealm.Albion:
 										{
-											relRegion = 1; // Cotswold
-											relX = 8192 + 553251;
-											relY = 8192 + 502936;
-											relZ = 2280;
+											// Cotswold
+											releasePosition = Position.Create(regionID: 1, x: 8192 + 553251, y: 8192 + 502936, z: 2280);
 											break;
 										}
 									case eRealm.Midgard:
 										{
-											relRegion = 100; // Mularn
-											relX = 8192 + 795621;
-											relY = 8192 + 719590;
-											relZ = 4680;
+											// Mularn
+											releasePosition = Position.Create(regionID: 100, x: 8192 + 795621, y: 8192 + 719590, z: 4680);
 											break;
 										}
 									case eRealm.Hibernia:
 										{
-											relRegion = 200; // MagMell
-											relX = 8192 + 338652;
-											relY = 8192 + 482335;
-											relZ = 5200;
+											// MagMell
+											releasePosition = Position.Create(regionID: 200, x: 8192 + 338652, y: 8192 + 482335, z: 5200);
 											break;
 										}
 								}
@@ -1593,10 +1562,7 @@ namespace DOL.GS
 									{
 										if (keep.DBKeep.BaseLevel > 50 && keep.Realm == Realm)
 										{
-											relRegion = (ushort)keep.Region;
-											relX = keep.X;
-											relY = keep.Y;
-											relZ = keep.Z;
+											releasePosition = Position.Create((ushort)keep.Region, x: keep.X, y: keep.Y, z: keep.Z);
 											break;
 										}
 									}
@@ -1605,24 +1571,23 @@ namespace DOL.GS
 								//nf
 							case 163:
 								{
-									if (BindRegion != 163)
+									if (BindPosition.RegionID != 163)
 									{
-										relRegion = 163;
 										switch (Realm)
 										{
 											case eRealm.Albion:
 												{
-													GameServer.KeepManager.GetBorderKeepLocation(1, out relX, out relY, out relZ, out relHeading);
+													releasePosition = GameServer.KeepManager.GetBorderKeepPosition(1);
 													break;
 												}
 											case eRealm.Midgard:
 												{
-													GameServer.KeepManager.GetBorderKeepLocation(3, out relX, out relY, out relZ, out relHeading);
+													releasePosition = GameServer.KeepManager.GetBorderKeepPosition(3);
 													break;
 												}
 											case eRealm.Hibernia:
 												{
-													GameServer.KeepManager.GetBorderKeepLocation(5, out relX, out relY, out relZ, out relHeading);
+													releasePosition = GameServer.KeepManager.GetBorderKeepPosition(5);
 													break;
 												}
 										}
@@ -1630,11 +1595,7 @@ namespace DOL.GS
 									}
 									else
 									{
-										relRegion = (ushort)BindRegion;
-										relX = BindXpos;
-										relY = BindYpos;
-										relZ = BindZpos;
-										relHeading = (ushort)BindHeading;
+                                        releasePosition = BindPosition;
 									}
 									break;
 								}/*
@@ -1645,11 +1606,7 @@ namespace DOL.GS
 								}*/
 							default:
 								{
-									relRegion = (ushort)BindRegion;
-									relX = BindXpos;
-									relY = BindYpos;
-									relZ = BindZpos;
-									relHeading = (ushort)BindHeading;
+                                    releasePosition = BindPosition;
 									break;
 								}
 						}
@@ -1722,7 +1679,7 @@ namespace DOL.GS
 			StartEnduranceRegeneration();
 
 			Region region = null;
-			if ((region = WorldMgr.GetRegion((ushort)BindRegion)) != null && region.GetZone(BindXpos, BindYpos) != null)
+			if ((region = WorldMgr.GetRegion(BindPosition.RegionID)) != null && region.GetZone(BindPosition.Coordinate) != null)
 			{
 				Out.SendMessage(LanguageMgr.GetTranslation(Client.Account.Language, "GamePlayer.Release.SurroundingChange"), eChatType.CT_YouDied, eChatLoc.CL_SystemWindow);
 			}
@@ -1737,7 +1694,7 @@ namespace DOL.GS
 			//Call MoveTo after new GameGravestone(this...
 			//or the GraveStone will be located at the player's bindpoint
 			
-			MoveTo(relRegion, relX, relY, relZ, relHeading);
+			MoveTo(releasePosition);
 			//It is enough if we revive the player on this client only here
 			//because for other players the player will be removed in the MoveTo
 			//method and added back again (if in view) with full health ... so no
@@ -1757,20 +1714,6 @@ namespace DOL.GS
 			}
 
 			TempProperties.removeProperty(DEATH_CONSTITUTION_LOSS_PROPERTY);
-
-			//Reset last valide position array to prevent /stuck avec /release
-			lock (m_lastUniqueLocations)
-			{
-				for (int i = 0; i < m_lastUniqueLocations.Length; i++)
-				{
-					GameLocation loc = m_lastUniqueLocations[i];
-					loc.X = X;
-					loc.Y = Y;
-					loc.Z = Z;
-					loc.Heading = Heading;
-					loc.RegionID = CurrentRegionID;
-				}
-			}
 		}
 
 		/// <summary>
@@ -2575,13 +2518,16 @@ namespace DOL.GS
 			return Math.Max(1, (int)hp4);
 		}
 
-		public override byte HealthPercentGroupWindow
-		{
-			get
-			{
-				return CharacterClass.HealthPercentGroupWindow;
-			}
-		}
+        public override byte HealthPercentGroupWindow
+        {
+            get
+            {
+				var necroWithPet = CharacterClass.Equals(GS.CharacterClass.Necromancer) && ControlledBrain != null;
+                if (necroWithPet) return ControlledBrain.Body.HealthPercent;
+
+                return HealthPercent;
+            }
+        }
 
 		/// <summary>
 		/// Calculate max mana for this player based on level and mana stat level
@@ -2801,46 +2747,36 @@ namespace DOL.GS
 			set { if (DBCharacter != null) DBCharacter.Race = value; }
 		}
 
-		/// <summary>
-		/// Players class
-		/// </summary>
-		protected ICharacterClass m_characterClass;
+		public virtual CharacterClass CharacterClass { get; protected set; }
 
-		/// <summary>
-		/// Gets the player's character class
-		/// </summary>
-		public virtual ICharacterClass CharacterClass
-		{
-			get { return m_characterClass; }
-		}
+		public string Salutation => CharacterClass.GetSalutation(Gender);
 
-		/// <summary>
-		/// Set the character class to a specific one
-		/// </summary>
-		/// <param name="id">id of the character class</param>
-		/// <returns>success</returns>
+		[Obsolete("Use SetCharacterClass(CharacterClass) instead.")]
 		public virtual bool SetCharacterClass(int id)
 		{
-			ICharacterClass cl = ScriptMgr.FindCharacterClass(id);
+			var cl = GS.CharacterClass.GetClass(id);
 
-			if (cl == null)
+			return SetCharacterClass(cl);
+		}
+
+        public bool SetCharacterClass(CharacterClass charClass)
+        {
+            if (charClass.Equals(GS.CharacterClass.None))
 			{
-				if (log.IsErrorEnabled)
-					log.ErrorFormat("No CharacterClass with ID {0} found", id);
+				if (log.IsErrorEnabled) log.ErrorFormat($"Unknown CharacterClass has been set for Player {Name}.");
 				return false;
 			}
+			if(charClass.Equals(GS.CharacterClass.Bainshee)) new BainsheeMorphEffect(this);
 
-			m_characterClass = cl;
-			m_characterClass.Init(this);
-
-			DBCharacter.Class = m_characterClass.ID;
+			CharacterClass = charClass;
+			DBCharacter.Class = CharacterClass.ID;
 
 			if (Group != null)
 			{
 				Group.UpdateMember(this, false, true);
 			}
 			return true;
-		}
+        }
 
 		/// <summary>
 		/// Hold all player face custom attibutes
@@ -3084,10 +3020,12 @@ namespace DOL.GS
 				{
 					// Adding
 					m_specialization.Add(skill.KeyName, skill);
-					
+
+					if (skill.KeyName == Specs.Stealth)
+						CanStealth = true;
+
 					if (notify)
 						Out.SendMessage(LanguageMgr.GetTranslation(Client.Account.Language, "GamePlayer.AddSpecialisation.YouLearn", skill.Name), eChatType.CT_System, eChatLoc.CL_SystemWindow);
-
 				}
 				else
 				{
@@ -3112,6 +3050,9 @@ namespace DOL.GS
 						return false;
 				
 				m_specialization.Remove(specKeyName);
+				
+				if (specKeyName == Specs.Stealth)
+					CanStealth = false;
 			}
 			
 			Out.SendMessage(LanguageMgr.GetTranslation(Client.Account.Language, "GamePlayer.RemoveSpecialization.YouLose", playerSpec.Name), eChatType.CT_System, eChatLoc.CL_SystemWindow);
@@ -3183,8 +3124,6 @@ namespace DOL.GS
 					}
 				}
 			}
-
-			CharacterClass.OnLevelUp(this, originalLevel);
 		}
 
 		public virtual bool RespecAll()
@@ -3272,11 +3211,10 @@ namespace DOL.GS
 
 			// If BD subpet spells scaled and capped by BD spec, respecing a spell line
 			//	requires re-scaling the spells for all subpets from that line.
-			if (CharacterClass is CharacterClassBoneDancer
+			if (CharacterClass.Equals(GS.CharacterClass.Bonedancer)
 				&& DOL.GS.ServerProperties.Properties.PET_SCALE_SPELL_MAX_LEVEL > 0
 				&& DOL.GS.ServerProperties.Properties.PET_CAP_BD_MINION_SPELL_SCALING_BY_SPEC
-				&& ControlledBrain is IControlledBrain brain && brain.Body is GamePet pet
-				&& pet.ControlledNpcList != null)
+				&& ControlledBody is GamePet pet && pet.ControlledNpcList != null)
 					foreach (ABrain subBrain in pet.ControlledNpcList)
 						if (subBrain != null && subBrain.Body is BDSubPet subPet && subPet.PetSpecLine == specLine.KeyName)
 							subPet.SortSpells();
@@ -4087,7 +4025,6 @@ namespace DOL.GS
 			Out.SendMessage(LanguageMgr.GetTranslation(Client.Account.Language, "GamePlayer.OnSkillTrained.YouSpend", skill.Level, skill.Name), eChatType.CT_System, eChatLoc.CL_SystemWindow);
 			Out.SendMessage(LanguageMgr.GetTranslation(Client.Account.Language, "GamePlayer.OnSkillTrained.YouHave", SkillSpecialtyPoints), eChatType.CT_System, eChatLoc.CL_SystemWindow);
 			Message.SystemToOthers(this, LanguageMgr.GetTranslation(Client.Account.Language, "GamePlayer.OnSkillTrained.TrainsInVarious", GetName(0, true)), eChatType.CT_System);
-			CharacterClass.OnSkillTrained(this, skill);
 			RefreshSpecDependantSkills(true);
 
 			Out.SendUpdatePlayerSkills();
@@ -4118,19 +4055,16 @@ namespace DOL.GS
 			return new GameEffectPlayerList(this);
 		}
 
-		#endregion
+        #endregion
 
-		#region Realm-/Region-/Bount-/Skillpoints...
-
-		/// <summary>
-		/// Gets/sets player bounty points
-		/// (delegate to PlayerCharacter)
-		/// </summary>
-		public virtual long BountyPoints
-		{
-			get { return DBCharacter != null ? DBCharacter.BountyPoints : 0; }
-			set { if (DBCharacter != null) DBCharacter.BountyPoints = value; }
-		}
+        #region Realm-/Region-/Bount-/Skillpoints...
+		[Obsolete("Use GetBalance(Currency.BountyPoints).Amount instead. " 
+			+ "The setter is going to be removed without replacement. Use Wallet.AddMoney/RemoveMoney instead.")]
+        public virtual long BountyPoints
+        {
+            get { return BountyPointBalance; }
+            set { Wallet.SetBalance(Currency.BountyPoints.Mint(value)); }
+        }
 
 		/// <summary>
 		/// Gets/sets player realm points
@@ -4168,9 +4102,7 @@ namespace DOL.GS
 			get { return DBCharacter != null ? DBCharacter.RealmLevel : 0; }
 			set
 			{
-				if (DBCharacter != null)
-					DBCharacter.RealmLevel = value;
-				CharacterClass.OnRealmLevelUp(this);
+				if (DBCharacter != null) DBCharacter.RealmLevel = value;
 			}
 		}
 
@@ -4349,41 +4281,25 @@ namespace DOL.GS
 			Out.SendUpdatePoints();
 		}
 
-		/// <summary>
-		/// Called when this living buy something with realm points
-		/// </summary>
-		/// <param name="amount">The amount of realm points loosed</param>
-		public bool RemoveBountyPoints(long amount)
-		{
-			return RemoveBountyPoints(amount, null);
-		}
-		/// <summary>
-		/// Called when this living buy something with realm points
-		/// </summary>
-		/// <param name="amount"></param>
-		/// <param name="str"></param>
-		/// <returns></returns>
-		public bool RemoveBountyPoints(long amount, string str)
-		{
-			return RemoveBountyPoints(amount, str, eChatType.CT_Say, eChatLoc.CL_SystemWindow);
-		}
-		/// <summary>
-		/// Called when this living buy something with realm points
-		/// </summary>
-		/// <param name="amount">The amount of realm points loosed</param>
-		/// <param name="loc">The chat location</param>
-		/// <param name="str">The message</param>
-		/// <param name="type">The chat type</param>
-		public virtual bool RemoveBountyPoints(long amount, string str, eChatType type, eChatLoc loc)
-		{
-			if (BountyPoints < amount)
-				return false;
-			BountyPoints -= amount;
-			Out.SendUpdatePoints();
-			if (str != null && amount != 0)
-				Out.SendMessage(str, type, loc);
-			return true;
-		}
+        [Obsolete("Use RemoveMoney(Money) instead.")]
+        public bool RemoveBountyPoints(long amount)
+        {
+            return RemoveBountyPoints(amount, null);
+        }
+
+        [Obsolete("Use RemoveMoney(Money) and SendSystemMessage(string) instead.")]
+        public bool RemoveBountyPoints(long amount, string str)
+        {
+            return RemoveBountyPoints(amount, str, eChatType.CT_Say, eChatLoc.CL_SystemWindow);
+        }
+
+        [Obsolete("Use RemoveMoney(Money) and SendMessage(string,eChatType,eChatLoc) instead.")]
+        public virtual bool RemoveBountyPoints(long amount, string str, eChatType type, eChatLoc loc)
+        {
+            var hasEnoughBps = Wallet.RemoveMoney(Currency.BountyPoints.Mint(amount));
+            if (hasEnoughBps && str != null && amount != 0) SendMessage(str, type, loc);
+            return hasEnoughBps;
+        }
 
 		/// <summary>
 		/// Player gains bounty points
@@ -4454,15 +4370,13 @@ namespace DOL.GS
 			if (notify)
 				base.GainBountyPoints(amount);
 
-			BountyPoints += amount;
+			Wallet.AddMoney(Currency.BountyPoints.Mint(amount));
 
 			if (m_guild != null && Client.Account.PrivLevel == 1)
 				m_guild.BountyPoints += amount;
 
 			if(sendMessage == true)
 				Out.SendMessage(LanguageMgr.GetTranslation(Client.Account.Language, "GamePlayer.GainBountyPoints.YouGet", amount.ToString()), eChatType.CT_Important, eChatLoc.CL_SystemWindow);
-			
-			Out.SendUpdatePoints();
 		}
 
 		/// <summary>
@@ -5200,7 +5114,6 @@ namespace DOL.GS
 				Out.SendMessage(LanguageMgr.GetTranslation(Client.Account.Language, "GamePlayer.OnLevelUp.StatRaise"), eChatType.CT_Important, eChatLoc.CL_SystemWindow);
 			}
 
-			CharacterClass.OnLevelUp(this, previouslevel);
 			GameServer.ServerRules.OnPlayerLevelUp(this, previouslevel);
 			RefreshSpecDependantSkills(true);
 
@@ -5692,10 +5605,6 @@ namespace DOL.GS
 		/// <param name="attackTarget">the target to attack</param>
 		public override void StartAttack(GameObject attackTarget)
 		{
-			if (CharacterClass.StartAttack(attackTarget) == false)
-			{
-				return;
-			}
 
 			if (!IsAlive)
 			{
@@ -5704,9 +5613,7 @@ namespace DOL.GS
 			}
 
 			// Necromancer with summoned pet cannot attack
-			if (ControlledBrain != null)
-				if (ControlledBrain.Body != null)
-					if (ControlledBrain.Body is NecromancerPet)
+			if (ControlledBody is NecromancerPet)
 			{
                 Out.SendMessage(LanguageMgr.GetTranslation(Client.Account.Language, "GamePlayer.StartAttack.CantInShadeMode"), eChatType.CT_YouHit, eChatLoc.CL_SystemWindow);
 				return;
@@ -5851,7 +5758,7 @@ namespace DOL.GS
                     }
 			}
 
-			if (CharacterClass is PlayerClass.ClassVampiir)
+			if (CharacterClass.Equals(GS.CharacterClass.Vampiir))
 			{
 				GameSpellEffect removeEffect = SpellHandler.FindEffectOnTarget(this, "VampiirSpeedEnhancement");
 				if (removeEffect != null)
@@ -6360,7 +6267,7 @@ namespace DOL.GS
 							ad.StyleDamage += keepstyle;
 						}
 						// vampiir
-						if (CharacterClass is PlayerClass.ClassVampiir
+						if (CharacterClass.Equals(GS.CharacterClass.Vampiir)
 						    && target is GameKeepComponent == false
 						    && target is GameKeepDoor == false
 						    && target is GameSiegeWeapon == false)
@@ -6695,7 +6602,7 @@ namespace DOL.GS
 					}
 			}
 			// vampiir
-			if (CharacterClass is PlayerClass.ClassVampiir)
+			if (CharacterClass.Equals(GS.CharacterClass.Vampiir))
 			{
 				GameSpellEffect removeEffect = SpellHandler.FindEffectOnTarget(this, "VampiirSpeedEnhancement");
 				if (removeEffect != null)
@@ -7021,9 +6928,11 @@ namespace DOL.GS
 			{
 				return 0;
 			}
+
+			var baseRangedWeaponRange = 440;
 			double classbase =
 				(weapon.SlotPosition == (int)eInventorySlot.DistanceWeapon
-				 ? CharacterClass.WeaponSkillRangedBase
+				 ? baseRangedWeaponRange
 				 : CharacterClass.WeaponSkillBase);
 
 			//added for WS Poisons
@@ -7250,13 +7159,12 @@ namespace DOL.GS
 			if (spell == null || spell.IsInstantCast)
 				return true;
 
-			switch (CharacterClass)
+			if( (CharacterClass.Equals(GS.CharacterClass.Vampiir)
+					|| CharacterClass.Equals(GS.CharacterClass.MaulerAlb)
+					|| CharacterClass.Equals(GS.CharacterClass.MaulerHib)
+					|| CharacterClass.Equals(GS.CharacterClass.MaulerMid)))
 			{
-				case PlayerClass.ClassVampiir vampiir:
-				case PlayerClass.ClassMaulerAlb maulerAlb:
-				case PlayerClass.ClassMaulerMid maulerMid:
-				case PlayerClass.ClassMaulerHib maulerHib:
-					return true;
+				return true;
 			}
 
 			return false;
@@ -7359,7 +7267,7 @@ namespace DOL.GS
 							case 2: range *= 1.15; break; //doesn't exist on live
 							case 3: range *= 1.25; break; //Flight +25%
 					}
-					if (livingTarget != null) range += Math.Min((Z - livingTarget.Z) / 2.0, 500);
+					if (livingTarget != null) range += Math.Min((Position.Z - livingTarget.Position.Z) / 2.0, 500);
 					if (range < 32) range = 32;
 
 					return (int)(range);
@@ -7534,8 +7442,6 @@ namespace DOL.GS
 			// ambiant talk
 			if (killer is GameNPC)
 				(killer as GameNPC).FireAmbientSentence(GameNPC.eAmbientTrigger.killing, this);
-			
-			CharacterClass.Die(killer);
 
 			bool realmDeath = killer != null && killer.Realm != eRealm.None;
 
@@ -8388,52 +8294,6 @@ namespace DOL.GS
 
 			return casted;
 		}
-
-		/// <summary>
-		/// Calculate how fast this player can cast a given spell
-		/// </summary>
-		/// <param name="spell"></param>
-		/// <returns></returns>
-		public override int CalculateCastingTime(SpellLine line, Spell spell)
-		{
-			int ticks = spell.CastTime;
-
-			if (spell.InstrumentRequirement != 0 ||
-			    line.KeyName == GlobalSpellsLines.Item_Spells ||
-			    line.KeyName.StartsWith(GlobalSpellsLines.Champion_Lines_StartWith))
-			{
-				return ticks;
-			}
-
-			if (CharacterClass.CanChangeCastingSpeed(line, spell) == false)
-				return ticks;
-
-			if (EffectList.GetOfType<QuickCastEffect>() != null)
-			{
-				// Most casters have access to the Quickcast ability (or the Necromancer equivalent, Facilitate Painworking).
-				// This ability will allow you to cast a spell without interruption.
-				// http://support.darkageofcamelot.com/kb/article.php?id=022
-
-				// A: You're right. The answer I should have given was that Quick Cast reduces the time needed to cast to a flat two seconds,
-				// and that a spell that has been quick casted cannot be interrupted. ...
-				// http://www.camelotherald.com/news/news_article.php?storyid=1383
-
-				return 2000;
-			}
-
-
-			double percent = DexterityCastTimeReduction;
-
-			percent *= 1.0 - GetModified(eProperty.CastingSpeed) * 0.01;
-
-			ticks = (int)(ticks * Math.Max(CastingSpeedReductionCap, percent));
-			if (ticks < MinimumCastingSpeed)
-				ticks = MinimumCastingSpeed;
-
-			return ticks;
-		}
-
-
 		#endregion
 
 		#region Realm Abilities
@@ -8590,141 +8450,77 @@ namespace DOL.GS
 			}
 		}
 
-		#region Money
-		
-		/// <summary>
-		/// Player Mithril Amount
-		/// </summary>
-		public virtual int Mithril { get { return m_Mithril; } protected set { m_Mithril = value; if (DBCharacter != null) DBCharacter.Mithril = m_Mithril; }}
-		protected int m_Mithril = 0;
-		
-		/// <summary>
-		/// Player Platinum Amount
-		/// </summary>
-		public virtual int Platinum { get { return m_Platinum; } protected set { m_Platinum = value; if (DBCharacter != null) DBCharacter.Platinum = m_Platinum; }}
-		protected int m_Platinum = 0;
-		
-		/// <summary>
-		/// Player Gold Amount
-		/// </summary>
-		public virtual int Gold { get { return m_Gold; } protected set { m_Gold = value; if (DBCharacter != null) DBCharacter.Gold = m_Gold; }}
-		protected int m_Gold = 0;
-		
-		/// <summary>
-		/// Player Silver Amount
-		/// </summary>
-		public virtual int Silver { get { return m_Silver; } protected set { m_Silver = value; if (DBCharacter != null) DBCharacter.Silver = m_Silver; }}
-		protected int m_Silver = 0;
-		
-		/// <summary>
-		/// Player Copper Amount
-		/// </summary>
-		public virtual int Copper { get { return m_Copper; } protected set { m_Copper = value; if (DBCharacter != null) DBCharacter.Copper = m_Copper; }}
-		protected int m_Copper = 0;
-		
-		/// <summary>
-		/// Gets the money value this player owns
-		/// </summary>
-		/// <returns></returns>
-		public virtual long GetCurrentMoney()
-		{
-			return Money.GetMoney(Mithril, Platinum, Gold, Silver, Copper);
-		}
+        #region Money
+		[Obsolete("Use DOL.GS.Money.GetMithril(long) instead.")]
+        public virtual int Mithril => Money.GetMithril(CopperBalance);
+		[Obsolete("Use DOL.GS.Money.GetPlatinum(long) instead.")]
+        public virtual int Platinum => Money.GetPlatinum(CopperBalance);
+		[Obsolete("Use DOL.GS.Money.GetGold(long) instead.")]
+        public virtual int Gold => Money.GetGold(CopperBalance);
+		[Obsolete("Use DOL.GS.Money.GetSilver(long) instead.")]
+        public virtual int Silver => Money.GetSilver(CopperBalance);
+		[Obsolete("Use DOL.GS.Money.GetCopper(long) instead.")]
+        public virtual int Copper => Money.GetCopper(CopperBalance);
 
-		/// <summary>
-		/// Adds money to this player
-		/// </summary>
-		/// <param name="money">money to add</param>
-		public virtual void AddMoney(long money)
-		{
-			AddMoney(money, null, eChatType.CT_System, eChatLoc.CL_SystemWindow);
-		}
+        private Wallet Wallet { get; }
 
-		/// <summary>
-		/// Adds money to this player
-		/// </summary>
-		/// <param name="money">money to add</param>
-		/// <param name="messageFormat">null if no message or "text {0} text"</param>
-		public virtual void AddMoney(long money, string messageFormat)
-		{
-			AddMoney(money, messageFormat, eChatType.CT_System, eChatLoc.CL_SystemWindow);
-		}
+        public DOL.GS.Finance.Money GetBalance(Currency currency) => Wallet.GetBalance(currency);
+        public long CopperBalance => GetBalance(Currency.Copper).Amount;
+        public long BountyPointBalance => GetBalance(Currency.BountyPoints).Amount;
 
-		/// <summary>
-		/// Adds money to this player
-		/// </summary>
-		/// <param name="money">money to add</param>
-		/// <param name="messageFormat">null if no message or "text {0} text"</param>
-		/// <param name="ct">message chat type</param>
-		/// <param name="cl">message chat location</param>
-		public virtual void AddMoney(long money, string messageFormat, eChatType ct, eChatLoc cl)
-		{
-			long newMoney = GetCurrentMoney() + money;
+        public void AddMoney(DOL.GS.Finance.Money money) => Wallet.AddMoney(money);
+        public bool RemoveMoney(DOL.GS.Finance.Money money) => Wallet.RemoveMoney(money);
 
-			Copper = Money.GetCopper(newMoney);
-			Silver = Money.GetSilver(newMoney);
-			Gold = Money.GetGold(newMoney);
-			Platinum = Money.GetPlatinum(newMoney);
-			Mithril = Money.GetMithril(newMoney);
+        [Obsolete("Use CopperBalance instead.")]
+        public virtual long GetCurrentMoney() => CopperBalance;
 
-			Out.SendUpdateMoney();
+        [Obsolete("Use AddMoney(Money) instead.")]
+        public virtual void AddMoney(long copperAmount)
+        {
+            if (copperAmount >= 0) AddMoney(Currency.Copper.Mint(copperAmount));
+            else RemoveMoney(Currency.Copper.Mint(-copperAmount));
+        }
 
-			if (messageFormat != null)
-			{
-				Out.SendMessage(string.Format(messageFormat, Money.GetString(money)), ct, cl);
-			}
-		}
+        [Obsolete("Use AddMoney(Money) and SendSystemMessage(string) instead.")]
+        public virtual void AddMoney(long copperAmount, string message)
+        {
+            AddMoney(copperAmount);
+            if (message != null) SendSystemMessage(string.Format(message, Money.GetString(copperAmount)));
+        }
 
-		/// <summary>
-		/// Removes money from the player
-		/// </summary>
-		/// <param name="money">money value to subtract</param>
-		/// <returns>true if successfull, false if player doesn't have enough money</returns>
-		public virtual bool RemoveMoney(long money)
-		{
-			return RemoveMoney(money, null, eChatType.CT_System, eChatLoc.CL_SystemWindow);
-		}
+        [Obsolete("Use AddMoney(Money) and SendMessage(string,eChatType,eChatLoc) instead.")]
+        public virtual void AddMoney(long copperAmount, string messageFormat, eChatType ct, eChatLoc cl)
+        {
+            AddMoney(copperAmount);
+            if (messageFormat != null) SendMessage(string.Format(messageFormat, Money.GetString(copperAmount)), ct, cl);
+        }
 
-		/// <summary>
-		/// Removes money from the player
-		/// </summary>
-		/// <param name="money">money value to subtract</param>
-		/// <param name="messageFormat">null if no message or "text {0} text"</param>
-		/// <returns>true if successfull, false if player doesn't have enough money</returns>
-		public virtual bool RemoveMoney(long money, string messageFormat)
-		{
-			return RemoveMoney(money, messageFormat, eChatType.CT_System, eChatLoc.CL_SystemWindow);
-		}
+        [Obsolete("Use RemoveMoney(Money) and SendSystemMessage(string) instead.")]
+        public virtual bool RemoveMoney(long copperAmount)
+        {
+            if (copperAmount >= 0) return RemoveMoney(Currency.Copper.Mint(copperAmount));
+            else
+            {
+                AddMoney(Currency.Copper.Mint(-copperAmount));
+                return true;
+            }
+        }
 
-		/// <summary>
-		/// Removes money from the player
-		/// </summary>
-		/// <param name="money">money value to subtract</param>
-		/// <param name="messageFormat">null if no message or "text {0} text"</param>
-		/// <param name="ct">message chat type</param>
-		/// <param name="cl">message chat location</param>
-		/// <returns>true if successfull, false if player doesn't have enough money</returns>
-		public virtual bool RemoveMoney(long money, string messageFormat, eChatType ct, eChatLoc cl)
-		{
-			if (money > GetCurrentMoney())
-				return false;
+        [Obsolete("Use RemoveMoney(Money) and SendSystemMessage(string) instead.")]
+        public virtual bool RemoveMoney(long money, string messageFormat)
+        {
+            var hasEnoughMoney = RemoveMoney(money);
+            if (hasEnoughMoney && messageFormat != null && money != 0) SendSystemMessage(messageFormat);
+            return hasEnoughMoney;
+        }
 
-			long newMoney = GetCurrentMoney() - money;
-
-			Mithril = Money.GetMithril(newMoney);
-			Platinum = Money.GetPlatinum(newMoney);
-			Gold = Money.GetGold(newMoney);
-			Silver = Money.GetSilver(newMoney);
-			Copper = Money.GetCopper(newMoney);
-
-			Out.SendUpdateMoney();
-
-			if (messageFormat != null && money != 0)
-			{
-				Out.SendMessage(string.Format(messageFormat, Money.GetString(money)), ct, cl);
-			}
-			return true;
-		}
+        [Obsolete("Use RemoveMoney(Money) and SendMessage(string,eChatType,eChatLoc) instead.")]
+        public virtual bool RemoveMoney(long money, string messageFormat, eChatType ct, eChatLoc cl)
+        {
+			var hasEnoughMoney = RemoveMoney(money);
+            if (hasEnoughMoney && messageFormat != null && money != 0) SendMessage(messageFormat, ct, cl);
+            return hasEnoughMoney;
+        }
 		#endregion
 
 		private InventoryItem m_useItem;
@@ -10023,15 +9819,10 @@ namespace DOL.GS
 		/// <returns>true if removed, false if removing failed</returns>
 		public override bool RemoveFromWorld()
 		{
-			if (CharacterClass.RemoveFromWorld() == false)
-			{
-				return false;
-			}
-
 			if (ObjectState == eObjectState.Active)
 			{
 				DismountSteed(true);
-				if (CurrentRegion.GetZone(X, Y) == null)
+				if (CurrentZone == null)
 				{
 					if (this is GamePlayer && this.Client.Account.PrivLevel < 3 && !(this as GamePlayer).TempProperties.getProperty("isbeingbanned", false))
 					{
@@ -10101,21 +9892,11 @@ namespace DOL.GS
 		/// </summary>
 		public const string DEBUG_MODE_PROPERTY = "Player.DebugMode";
 
-		/// <summary>
-		/// This function moves a player to a specific region and
-		/// specific coordinates.
-		/// </summary>
-		/// <param name="regionID">RegionID to move to</param>
-		/// <param name="x">X target coordinate</param>
-		/// <param name="y">Y target coordinate</param>
-		/// <param name="z">Z target coordinate (0 to put player on floor)</param>
-		/// <param name="heading">Target heading</param>
-		/// <returns>true if move succeeded, false if failed</returns>
-		public override bool MoveTo(ushort regionID, int x, int y, int z, ushort heading)
+		public override bool MoveTo(Position position)
 		{
 			//if we are jumping somewhere away from our house not using house.Exit
 			//we need to make the server know we have left the house
-			if ((CurrentHouse != null || InHouse) && CurrentHouse.RegionID != regionID)
+			if ((CurrentHouse != null || InHouse) && CurrentHouse.RegionID != position.RegionID)
 			{
 				InHouse = false;
 				CurrentHouse = null;
@@ -10124,13 +9905,13 @@ namespace DOL.GS
 			if (IsOnHorse)
 				IsOnHorse = false;
 			//Get the destination region based on the ID
-			Region rgn = WorldMgr.GetRegion(regionID);
+			Region rgn = WorldMgr.GetRegion(position.RegionID);
 			//If the region doesn't exist, return false or if they aren't allowed to zone here
 			if (rgn == null || !GameServer.ServerRules.IsAllowedToZone(this, rgn))
 				return false;
 			//If the x,y inside this region doesn't point to a zone
 			//return false
-			if (rgn.GetZone(x, y) == null)
+			if (rgn.GetZone(position.Coordinate) == null)
 				return false;
 
 			Diving(waterBreath.Normal);
@@ -10138,13 +9919,19 @@ namespace DOL.GS
 			if (SiegeWeapon != null)
 				SiegeWeapon.ReleaseControl();
 
-			if (regionID != CurrentRegionID)
+            var positionBeforePort = Position;
+
+			if (position.RegionID != positionBeforePort.RegionID)
 			{
 				GameEventMgr.Notify(GamePlayerEvent.RegionChanging, this);
 				if (!RemoveFromWorld())
 					return false;
 				//notify event
-				CurrentRegion.Notify(RegionEvent.PlayerLeave, CurrentRegion, new RegionPlayerEventArgs(this));
+
+                if(CurrentRegion != null)
+                {
+                    CurrentRegion.Notify(RegionEvent.PlayerLeave, CurrentRegion, new RegionPlayerEventArgs(this));
+                }
 
 				CancelAllConcentrationEffects(true);
 				if (ControlledBrain != null)
@@ -10169,8 +9956,6 @@ namespace DOL.GS
 				IsJumping = true;
 			}
 			bool hasPetToMove = false;
-			//Remove the last update tick property, to prevent speedhack messages during zoning and teleporting!
-			LastPositionUpdateTick = 0;
 
 			if (ControlledBrain != null && ControlledBrain.WalkState != eWalkState.Stay)
 			{
@@ -10182,21 +9967,13 @@ namespace DOL.GS
 			//Set the new destination
 			//Current Speed = 0 when moved ... else X,Y,Z continue to be modified
 			CurrentSpeed = 0;
-			MovementStartTick = Environment.TickCount;
-			Point3D originalPoint = new Point3D(X, Y, Z);
-			X = x;
-			Y = y;
-			Z = z;
-			Heading = heading;
+            Position = position;
 
 			//Remove the last update tick property, to prevent speedhack messages during zoning and teleporting!
 			TempProperties.removeProperty(PlayerPositionUpdateHandler.LASTMOVEMENTTICK);
 			//If the destination is in another region
-			if (regionID != CurrentRegionID)
+			if (position.RegionID != positionBeforePort.RegionID)
 			{
-				//Set our new region
-				CurrentRegionID = regionID;
-
 				//Send the region update packet, the rest will be handled
 				//by the packethandlers
 				Out.SendRegionChanged();
@@ -10207,7 +9984,7 @@ namespace DOL.GS
 				Out.SendPlayerJump(false);
 
 				// are we jumping far enough to force a complete refresh?
-				if (GetDistanceTo(originalPoint) > WorldMgr.REFRESH_DISTANCE)
+				if (Coordinate.DistanceTo(positionBeforePort) > WorldMgr.REFRESH_DISTANCE)
 				{
 					RefreshWorld();
 				}
@@ -10232,27 +10009,16 @@ namespace DOL.GS
 
 				if (hasPetToMove)
 				{
-					Point2D point = GetPointFromHeading(Heading, 64);
-
-					IControlledBrain npc = ControlledBrain;
-					if (npc != null)
+					if (ControlledBody is GameNPC petBody)
 					{
-						GameNPC petBody = npc.Body;
+                        var destination = Position.TurnedAround() + Vector.Create(Orientation, length: 64, z: 10);
+						petBody.MoveWithoutRemovingFromWorld(destination, false);
 
-						petBody.MoveInRegion(CurrentRegionID, point.X, point.Y, this.Z + 10, (ushort)((this.Heading + 2048) % 4096), false);
-
-						if (petBody != null && petBody.ControlledNpcList != null)
-						{
+						if (petBody.ControlledNpcList != null)
 							foreach (IControlledBrain icb in petBody.ControlledNpcList)
-							{
-								if (icb != null && icb.Body != null)
-								{
-									GameNPC petBody2 = icb.Body;
-									if (petBody2 != null && originalPoint.IsWithinRadius(petBody2, 500))
-										petBody2.MoveInRegion(CurrentRegionID, point.X, point.Y, this.Z + 10, (ushort)((this.Heading + 2048) % 4096), false);
-								}
-							}
-						}
+								if (icb != null && icb.Body is GameNPC petBody2
+									&& petBody2.Coordinate.DistanceTo(positionBeforePort) < 500)
+										petBody2.MoveWithoutRemovingFromWorld(destination, false);
 					}
 				}
 			}
@@ -10292,11 +10058,11 @@ namespace DOL.GS
 		//Eden - Move to bind, and check if the loc is allowed
 		public virtual bool MoveToBind()
 		{
-			Region rgn = WorldMgr.GetRegion((ushort)BindRegion);
-			if (rgn == null || rgn.GetZone(BindXpos, BindYpos) == null)
+			Region rgn = WorldMgr.GetRegion(BindPosition.RegionID);
+			if (rgn == null || rgn.GetZone(BindPosition.Coordinate) == null)
 			{
 				if (log.IsErrorEnabled)
-					log.Error("Player: " + Name + " unknown bind point : (R/X/Y) " + BindRegion + "/" + BindXpos + "/" + BindYpos);
+					log.Error("Player: " + Name + " unknown bind point : (R/X/Y) " + BindPosition.RegionID + "/" + BindPosition.X + "/" + BindPosition.Y);
 				//Kick the player, avoid server freeze
 				Client.Out.SendPlayerQuit(true);
 				SaveIntoDatabase();
@@ -10310,7 +10076,7 @@ namespace DOL.GS
 					b.Account = Client.Account.Name;
 					b.DateBan = DateTime.Now;
 					b.Type = "B";
-					b.Reason = "X/Y/Zone : " + X + "/" + Y + "/" + CurrentRegion.ID;
+					b.Reason = "X/Y/RegionID : " + Position.X + "/" + Position.Y + "/" + Position.RegionID;
 					GameServer.Database.AddObject(b);
 					GameServer.Database.SaveObject(b);
 					string message = "Unknown bind point, your account is banned, contact a GM.";
@@ -10321,7 +10087,7 @@ namespace DOL.GS
 			}
 
 			if (GameServer.ServerRules.IsAllowedToMoveToBind(this))
-				return MoveTo((ushort)BindRegion, BindXpos, BindYpos, BindZpos, (ushort)BindHeading);
+				return MoveTo(BindPosition);
 
 			return false;
 		}
@@ -10517,41 +10283,14 @@ namespace DOL.GS
 			set { m_areaUpdateTick = value; }
 		}
 
-		/// <summary>
-		/// Gets the current position of this player
-		/// </summary>
-		public override int X
-		{
-			set
-			{
-				base.X = value;
-				if (DBCharacter != null) DBCharacter.Xpos = base.X;
-			}
-		}
-
-		/// <summary>
-		/// Gets the current position of this player
-		/// </summary>
-		public override int Y
-		{
-			set
-			{
-				base.Y = value;
-				if (DBCharacter != null) DBCharacter.Ypos = base.Y;
-			}
-		}
-
-		/// <summary>
-		/// Gets the current position of this player
-		/// </summary>
-		public override int Z
-		{
-			set
-			{
-				base.Z = value;
-				if (DBCharacter != null) DBCharacter.Zpos = base.Z;
-			}
-		}
+        public override Position Position
+        {
+            set
+            {
+                base.Position = value;
+                if(DBCharacter != null) DBCharacter.SetPosition(value);
+            }
+        }
 
 		/// <summary>
 		/// Gets or sets the current speed of this player
@@ -10594,28 +10333,7 @@ namespace DOL.GS
 			set { m_lastPositionUpdateZone = value; }
 		}
 
-
-		private int m_lastPositionUpdateTick = 0;
-
-		/// <summary>
-		/// The environment tick count when this players position was last updated
-		/// </summary>
-		public int LastPositionUpdateTick
-		{
-			get { return m_lastPositionUpdateTick; }
-			set { m_lastPositionUpdateTick = value; }
-		}
-
-		private Point3D m_lastPositionUpdatePoint = new Point3D(0, 0, 0);
-
-		/// <summary>
-		/// The last recorded position of this player
-		/// </summary>
-		public Point3D LastPositionUpdatePoint
-		{
-			get { return m_lastPositionUpdatePoint; }
-			set { m_lastPositionUpdatePoint = value; }
-		}
+        public Coordinate LastUpdateCoordinate => Motion.Start.Coordinate;
 
 		/// <summary>
 		/// Holds the players max Z for fall damage
@@ -10644,15 +10362,12 @@ namespace DOL.GS
 			}
 		}
 
-		/// <summary>
-		/// Gets or sets the heading of this player
-		/// </summary>
-		public override ushort Heading
+		public override Angle Orientation
 		{
 			set
 			{
-				base.Heading = value;
-				if (DBCharacter != null) DBCharacter.Direction = value;
+				base.Orientation = value;
+				if (DBCharacter != null) DBCharacter.Direction = value.InHeading;
 
 				if (AttackState && ActiveWeaponSlot != eActiveWeaponSlot.Distance)
 				{
@@ -11142,29 +10857,17 @@ namespace DOL.GS
 			UpdatePlayerStatus();
 		}
 
-		/// <summary>
-		/// Sets the Living's ground-target Coordinates inside the current Region
-		/// </summary>
-		public override void SetGroundTarget(int groundX, int groundY, int groundZ)
-		{
-			base.SetGroundTarget(groundX, groundY, groundZ);
-			Out.SendMessage(String.Format("You ground-target {0},{1},{2}", groundX, groundY, groundZ), eChatType.CT_System, eChatLoc.CL_SystemWindow);
-			if (SiegeWeapon != null)
-				SiegeWeapon.SetGroundTarget(groundX, groundY, groundZ);
-		}
+        public override Position GroundTargetPosition
+        {
+            set
+            {
+                base.GroundTargetPosition = value;
+                Out.SendMessage(String.Format("You ground-target {0},{1},{2}", value.X, value.Y, value.Z), eChatType.CT_System, eChatLoc.CL_SystemWindow);
+                if (SiegeWeapon != null) SiegeWeapon.GroundTargetPosition = value;
+            }
+        }
 
-		/// <summary>
-		/// Holds unique locations array
-		/// </summary>
-		protected readonly GameLocation[] m_lastUniqueLocations;
-
-		/// <summary>
-		/// Gets unique locations array
-		/// </summary>
-		public GameLocation[] LastUniqueLocations
-		{
-			get { return m_lastUniqueLocations; }
-		}
+        public Position[] LastUniquePositions { get; } = new Position[4];
 
 		/// <summary>
 		/// Updates Health, Mana, Sitting, Endurance, Concentration and Alive status to client
@@ -11887,14 +11590,7 @@ namespace DOL.GS
 			else
 			{
 				gameItem = new WorldInventoryItem(item);
-
-				Point2D itemloc = this.GetPointFromHeading(this.Heading, 30);
-				gameItem.X = itemloc.X;
-				gameItem.Y = itemloc.Y;
-				gameItem.Z = Z;
-				gameItem.Heading = Heading;
-				gameItem.CurrentRegionID = CurrentRegionID;
-
+				gameItem.Position = Position + Vector.Create(Orientation, length: 30);
 				gameItem.AddOwner(this);
 				gameItem.AddToWorld();
 			}
@@ -11930,8 +11626,8 @@ namespace DOL.GS
 				{
 					log.DebugFormat("Pickup error: {0}  object x{1}, y{2}, z{3}, r{4} - player x{5}, y{6}, z{7}, r{8}",
 					                Name,
-					                floorObject.X, floorObject.Y, floorObject.Z, floorObject.CurrentRegionID,
-					                X, Y, Z, CurrentRegionID);
+					                floorObject.Position.X, floorObject.Position.Y, floorObject.Position.Z, floorObject.Position.RegionID,
+					                Position.X, Position.Y, Position.Z, Position.RegionID);
 				}
 				catch
 				{
@@ -12078,16 +11774,20 @@ namespace DOL.GS
 							{
 								long moneyToGuild = moneyToPlayer * eligibleMember.Guild.GetGuildDuesPercent() / 100;
 								if (eligibleMember.Guild.GetGuildDuesPercent() != 100)
-									eligibleMember.AddMoney(moneyToPlayer, LanguageMgr.GetTranslation(Client.Account.Language, "GamePlayer.PickupObject.YourLootShare", Money.GetString(moneyToPlayer)));
+								{
+									eligibleMember.AddMoney(Currency.Copper.Mint(moneyToPlayer));
+									eligibleMember.SendSystemMessage(LanguageMgr.GetTranslation(Client.Account.Language, "GamePlayer.PickupObject.YourLootShare", Money.GetString(moneyToPlayer)));
+								}
 								else
-									eligibleMember.AddMoney(moneyToPlayer);
+									eligibleMember.AddMoney(Currency.Copper.Mint(moneyToPlayer));
 
 								InventoryLogging.LogInventoryAction("(ground)", eligibleMember, eInventoryActionType.Loot, moneyToPlayer);
 								eligibleMember.Guild.SetGuildBank(eligibleMember, moneyToGuild);
 							}
 							else
 							{
-								eligibleMember.AddMoney(moneyToPlayer, LanguageMgr.GetTranslation(Client.Account.Language, "GamePlayer.PickupObject.YourLootShare", Money.GetString(moneyToPlayer)));
+								eligibleMember.AddMoney(Currency.Copper.Mint(moneyToPlayer));
+								eligibleMember.SendSystemMessage(LanguageMgr.GetTranslation(Client.Account.Language, "GamePlayer.PickupObject.YourLootShare", Money.GetString(moneyToPlayer)));
 								InventoryLogging.LogInventoryAction("(ground)", eligibleMember, eInventoryActionType.Loot, moneyToPlayer);
 							}
 						}
@@ -12100,18 +11800,20 @@ namespace DOL.GS
 							long moneyToGuild = moneyObject.TotalCopper * Guild.GetGuildDuesPercent() / 100;
 							if (Guild.GetGuildDuesPercent() != 100)
 							{
-								AddMoney(moneyObject.TotalCopper, LanguageMgr.GetTranslation(Client.Account.Language, "GamePlayer.PickupObject.YouPickUp", Money.GetString(moneyObject.TotalCopper)));
+								AddMoney(Currency.Copper.Mint(moneyObject.TotalCopper)); 
+								SendSystemMessage(LanguageMgr.GetTranslation(Client.Account.Language, "GamePlayer.PickupObject.YouPickUp", Money.GetString(moneyObject.TotalCopper)));
 							}
 							else
 							{
-								AddMoney(moneyObject.TotalCopper);
+								AddMoney(Currency.Copper.Mint(moneyObject.TotalCopper));
 							}
 							InventoryLogging.LogInventoryAction("(ground)", this, eInventoryActionType.Loot, moneyObject.TotalCopper);
 							Guild.SetGuildBank(this, moneyToGuild);
 						}
 						else
 						{
-							AddMoney(moneyObject.TotalCopper, LanguageMgr.GetTranslation(Client.Account.Language, "GamePlayer.PickupObject.YouPickUp", Money.GetString(moneyObject.TotalCopper)));
+							AddMoney(Currency.Copper.Mint(moneyObject.TotalCopper));
+							SendSystemMessage(LanguageMgr.GetTranslation(Client.Account.Language, "GamePlayer.PickupObject.YouPickUp", Money.GetString(moneyObject.TotalCopper)));
 							InventoryLogging.LogInventoryAction("(ground)", this, eInventoryActionType.Loot, moneyObject.TotalCopper);
 						}
 					}
@@ -12449,9 +12151,6 @@ namespace DOL.GS
 					}
 				}
 			}
-						
-			CharacterClass.OnLevelUp(this, Level); // load all skills from DB first to keep the order
-			CharacterClass.OnRealmLevelUp(this);
 		}
 
 		/// <summary>
@@ -12558,13 +12257,8 @@ namespace DOL.GS
 			if (!(obj is DOLCharacters))
 				return;
 			m_dbCharacter = (DOLCharacters)obj;
-
-			// Money
-			m_Copper = DBCharacter.Copper;
-			m_Silver = DBCharacter.Silver;
-			m_Gold = DBCharacter.Gold;
-			m_Platinum = DBCharacter.Platinum;
-			m_Mithril = DBCharacter.Mithril;
+			
+			Wallet.InitializeFromDatabase();
 			
 			Model = (ushort)DBCharacter.CurrentModel;
 
@@ -12602,26 +12296,20 @@ namespace DOL.GS
 			#endregion
 
 			#region setting world-init-position (delegate to PlayerCharacter dont make sense)
-			m_x = DBCharacter.Xpos;
-			m_y = DBCharacter.Ypos;
-			m_z = DBCharacter.Zpos;
-			m_Heading = (ushort)DBCharacter.Direction;
+            Position = DBCharacter.GetPosition();
 			//important, use CurrentRegion property
 			//instead because it sets the Region too
 			CurrentRegionID = (ushort)DBCharacter.Region;
-			if (CurrentRegion == null || CurrentRegion.GetZone(m_x, m_y) == null)
+			if (CurrentRegion == null || CurrentRegion.GetZone(Coordinate) == null)
 			{
-				log.WarnFormat("Invalid region/zone on char load ({0}): x={1} y={2} z={3} reg={4}; moving to bind point.", DBCharacter.Name, X, Y, Z, DBCharacter.Region);
-				m_x = DBCharacter.BindXpos;
-				m_y = DBCharacter.BindYpos;
-				m_z = DBCharacter.BindZpos;
-				m_Heading = (ushort)DBCharacter.BindHeading;
-				CurrentRegionID = (ushort)DBCharacter.BindRegion;
+                log.WarnFormat("Invalid region/zone on char load ({0}): x={1} y={2} z={3} reg={4}; moving to bind point."
+                    , DBCharacter.Name, Coordinate.X, Coordinate.Y, Coordinate.Z, DBCharacter.Region);
+                Position = DBCharacter.GetBindPosition();
 			}
 
-			for (int i = 0; i < m_lastUniqueLocations.Length; i++)
+			for (int i = 0; i < LastUniquePositions.Length; i++)
 			{
-				m_lastUniqueLocations[i] = new GameLocation(null, CurrentRegionID, m_x, m_y, m_z);
+				LastUniquePositions[i] = Position;
 			}
 			#endregion
 
@@ -12635,9 +12323,9 @@ namespace DOL.GS
 			m_charStat[eStat.EMP - eStat._First] = (short)DBCharacter.Empathy;
 			m_charStat[eStat.CHR - eStat._First] = (short)DBCharacter.Charisma;
 
-			SetCharacterClass(DBCharacter.Class);
+			SetCharacterClass(CharacterClass.GetClass(DBCharacter.Class));
 
-			m_currentSpeed = 0;
+			CurrentSpeed = 0;
 			if (MaxSpeedBase == 0)
 				MaxSpeedBase = PLAYER_BASE_SPEED;
 
@@ -12753,14 +12441,9 @@ namespace DOL.GS
 				DBCharacter.ActiveWeaponSlot = (byte)((byte)ActiveWeaponSlot | (byte)ActiveQuiverSlot);
 				if (m_stuckFlag)
 				{
-					lock (m_lastUniqueLocations)
+					lock (LastUniquePositions)
 					{
-						GameLocation loc = m_lastUniqueLocations[m_lastUniqueLocations.Length - 1];
-						DBCharacter.Xpos = loc.X;
-						DBCharacter.Ypos = loc.Y;
-						DBCharacter.Zpos = loc.Z;
-						DBCharacter.Region = loc.RegionID;
-						DBCharacter.Direction = loc.Heading;
+						DBCharacter.SetPosition(LastUniquePositions[LastUniquePositions.Length - 1]);
 					}
 				}
 				GameServer.Database.SaveObject(DBCharacter);
@@ -12920,7 +12603,7 @@ namespace DOL.GS
 				case eGameServerType.GST_Normal:
 					{
 						if (Realm == player.Realm || Client.Account.PrivLevel > 1 || player.Client.Account.PrivLevel > 1)
-							message = LanguageMgr.GetTranslation(player.Client.Account.Language, "GamePlayer.GetExamineMessages.RealmMember", player.GetName(this), GetPronoun(Client, 0, true), CharacterClass.Name);
+							message = LanguageMgr.GetTranslation(player.Client.Account.Language, "GamePlayer.GetExamineMessages.RealmMember", player.GetName(this), GetPronoun(Client, 0, true), Salutation);
 						else
 							message = LanguageMgr.GetTranslation(player.Client.Account.Language, "GamePlayer.GetExamineMessages.EnemyRealmMember", player.GetName(this), GetPronoun(Client, 0, true));
 						break;
@@ -12929,11 +12612,11 @@ namespace DOL.GS
 				case eGameServerType.GST_PvP:
 					{
 						if (Client.Account.PrivLevel > 1 || player.Client.Account.PrivLevel > 1)
-							message = LanguageMgr.GetTranslation(player.Client.Account.Language, "GamePlayer.GetExamineMessages.YourGuildMember", player.GetName(this), GetPronoun(Client, 0, true), CharacterClass.Name);
+							message = LanguageMgr.GetTranslation(player.Client.Account.Language, "GamePlayer.GetExamineMessages.YourGuildMember", player.GetName(this), GetPronoun(Client, 0, true), Salutation);
 						else if (Guild == null)
 							message = LanguageMgr.GetTranslation(player.Client.Account.Language, "GamePlayer.GetExamineMessages.NeutralMember", player.GetName(this), GetPronoun(Client, 0, true));
 						else if (Guild == player.Guild || Client.Account.PrivLevel > 1 || player.Client.Account.PrivLevel > 1)
-							message = LanguageMgr.GetTranslation(player.Client.Account.Language, "GamePlayer.GetExamineMessages.YourGuildMember", player.GetName(this), GetPronoun(Client, 0, true), CharacterClass.Name);
+							message = LanguageMgr.GetTranslation(player.Client.Account.Language, "GamePlayer.GetExamineMessages.YourGuildMember", player.GetName(this), GetPronoun(Client, 0, true), Salutation);
 						else
 							message = LanguageMgr.GetTranslation(player.Client.Account.Language, "GamePlayer.GetExamineMessages.OtherGuildMember", player.GetName(this), GetPronoun(Client, 0, true), GuildName);
 						break;
@@ -12950,6 +12633,10 @@ namespace DOL.GS
 			return list;
 		}
 
+        public virtual void SendSystemMessage(string message)
+            => Out.SendMessage(message, eChatType.CT_System, eChatLoc.CL_SystemWindow);
+        public virtual void SendMessage(string message, eChatType chatType, eChatLoc chatLocation)
+            => Out.SendMessage(message, chatType, chatLocation);
 		#endregion
 
 		#region Stealth / Wireframe
@@ -13015,7 +12702,7 @@ namespace DOL.GS
 		/// Set player's stealth state
 		/// </summary>
 		/// <param name="goStealth">true is stealthing, false if unstealthing</param>
-		public virtual void Stealth(bool goStealth)
+		public override void Stealth(bool goStealth)
 		{
 			if (IsStealthed == goStealth)
 				return;
@@ -13171,17 +12858,17 @@ namespace DOL.GS
 						fieldOfListen += (npc.Level - player.Level) * 3;
 					}
 
-					double angle = npc.GetAngle( player );
+					var angle = npc.GetAngleTo(player.Coordinate);
 
 					//player in front
 					fieldOfView /= 2.0;
-					bool canSeePlayer = (angle >= 360 - fieldOfView || angle < fieldOfView);
+					bool canSeePlayer = (angle.InDegrees >= 360 - fieldOfView || angle.InDegrees < fieldOfView);
 
 					//If npc can not see nor hear the player, continue the loop
 					fieldOfListen /= 2.0;
 					if (canSeePlayer == false &&
-					    !(angle >= (45 + 60) - fieldOfListen && angle < (45 + 60) + fieldOfListen) &&
-					    !(angle >= (360 - 45 - 60) - fieldOfListen && angle < (360 - 45 - 60) + fieldOfListen))
+					    !(angle.InDegrees >= (45 + 60) - fieldOfListen && angle.InDegrees < (45 + 60) + fieldOfListen) &&
+					    !(angle.InDegrees >= (360 - 45 - 60) - fieldOfListen && angle.InDegrees < (360 - 45 - 60) + fieldOfListen))
 						continue;
 
 					double chanceMod = 1.0;
@@ -13429,6 +13116,26 @@ namespace DOL.GS
 					}
 				}
 			}
+			
+			// Reward data driven quests for this player 
+            var dqRewardQ = DOLDB<CharacterXRewardQuest>.SelectObjects(DB.Column(nameof(CharacterXRewardQuest.Character_ID)).IsEqualTo(QuestPlayerID));
+            foreach (CharacterXRewardQuest quest in dqRewardQ)
+            {
+                DBRewardQuest dbDQRQ = GameServer.Database.FindObjectByKey<DBRewardQuest>(quest.DataQuestID);
+                if (dbDQRQ != null)
+                {
+                    DQRewardQ dqrq = new DQRewardQ(this, dbDQRQ, quest);
+
+                    if (quest.Step > 0)
+                    {
+                        m_questList.Add((AbstractQuest)dqrq);
+                    }
+                    else if (quest.Count > 0)
+                    {
+                        m_questListFinished.Add((AbstractQuest)dqrq);
+                    }
+                }
+            }
 		}
 
 		/// <summary>
@@ -13598,7 +13305,6 @@ namespace DOL.GS
 		#region Notify
 		public override void Notify(DOLEvent e, object sender, EventArgs args)
 		{
-			CharacterClass.Notify(e, sender, args);
 			base.Notify(e, sender, args);
 
 			// events will only fire for currently active quests.
@@ -14136,25 +13842,46 @@ namespace DOL.GS
 		#endregion
 
 		#region ControlledNpc
-
-		/// <summary>
-		/// Sets the controlled object for this player
-		/// (delegates to CharacterClass)
-		/// </summary>
-		/// <param name="controlledNpc"></param>
 		public override void SetControlledBrain(IControlledBrain controlledBrain)
 		{
-			CharacterClass.SetControlledBrain(controlledBrain);
+			if (controlledBrain == ControlledBrain) return;
+            if (controlledBrain == null)
+            {
+                Out.SendPetWindow(null, ePetWindowAction.Close, 0, 0);
+                Out.SendMessage(LanguageMgr.GetTranslation(Client.Account.Language, "GamePlayer.SetControlledNpc.ReleaseTarget2", ControlledBrain.Body.Name), eChatType.CT_System, eChatLoc.CL_SystemWindow);
+                Out.SendMessage(LanguageMgr.GetTranslation(Client.Account.Language, "GamePlayer.SetControlledNpc.ReleaseTarget"), eChatType.CT_System, eChatLoc.CL_SystemWindow);
+            }
+            else
+            {
+                if (controlledBrain.Owner != this)
+                    throw new ArgumentException("ControlledNpc with wrong owner is set (player=" + Name + ", owner=" + controlledBrain.Owner.Name + ")", "controlledNpc");
+                if (ControlledBrain == null)
+                    InitControlledBrainArray(1);
+                Out.SendPetWindow(controlledBrain.Body, ePetWindowAction.Open, controlledBrain.AggressionState, controlledBrain.WalkState);
+                if (controlledBrain.Body != null)
+                {
+                    Out.SendNPCCreate(controlledBrain.Body); // after open pet window again send creation NPC packet
+                    if (controlledBrain.Body.Inventory != null)
+                        Out.SendLivingEquipmentUpdate(controlledBrain.Body);
+                }
+            }
+
+            ControlledBrain = controlledBrain;
 		}
-		
-		/// <summary>
-		/// Releases controlled object
-		/// (delegates to CharacterClass)
-		/// </summary>
-		public virtual void CommandNpcRelease()
-		{
-			CharacterClass.CommandNpcRelease();
-		}
+
+        public virtual void CommandNpcRelease()
+        {
+            var targetIsPet = TargetObject is GameNPC npc && IsControlledNPC(npc);
+            if (targetIsPet)
+            {
+                Notify(GameLivingEvent.PetReleased, TargetObject);
+            }
+            else
+            {
+                var hasMainPet = ControlledBrain != null && ControlledBrain.Body != null;
+                if (hasMainPet) Notify(GameLivingEvent.PetReleased, ControlledBrain.Body);
+            }
+        }
 		
 		/// <summary>
 		/// Commands controlled object to attack
@@ -14359,15 +14086,6 @@ namespace DOL.GS
 		}
 
 		/// <summary>
-		/// Create a shade effect for this player.
-		/// </summary>
-		/// <returns></returns>
-		protected virtual ShadeEffect CreateShadeEffect()
-		{
-			return CharacterClass.CreateShadeEffect();
-		}
-
-		/// <summary>
 		/// The model ID used on character creation.
 		/// </summary>
 		public ushort CreationModel
@@ -14422,13 +14140,23 @@ namespace DOL.GS
 			}
 		}
 
-		/// <summary>
-		/// Changes shade state of the player.
-		/// </summary>
-		/// <param name="state">The new state.</param>
-		public virtual void Shade(bool state)
+		public virtual void Shade(bool makeShade)
 		{
-			CharacterClass.Shade(state);
+			if (IsShade == makeShade)
+            {
+                if (makeShade && (ObjectState == GameObject.eObjectState.Active))
+                    Out.SendMessage(LanguageMgr.GetTranslation(Client.Account.Language, "GamePlayer.Shade.AlreadyShade"), eChatType.CT_System, eChatLoc.CL_SystemWindow);
+                return;
+            }
+
+            if (makeShade)
+			{
+				var isNecro = CharacterClass.Equals(GS.CharacterClass.Necromancer);
+				if(isNecro) ShadeEffect = new NecromancerShadeEffect();
+				else ShadeEffect = new ShadeEffect();
+				ShadeEffect.Start(this);
+			}
+            else ShadeEffect.Cancel(false);
 		}
 		#endregion
 
@@ -15360,7 +15088,10 @@ namespace DOL.GS
 
 			ChampionExperience += experience;
 			Out.SendUpdatePoints();
-		}
+
+            if (ChampionExperience >= ChampionExperienceForNextLevel)
+                ChampionLevelUp();
+        }
 
 
 		/// <summary>
@@ -15704,7 +15435,7 @@ namespace DOL.GS
 		public override string ToString()
 		{
 			return new StringBuilder(base.ToString())
-				.Append(" class=").Append(CharacterClass.Name)
+				.Append(" class=").Append(Salutation)
 				.Append('(').Append(CharacterClass.ID.ToString()).Append(')')
 				.ToString();
 		}
@@ -15712,7 +15443,7 @@ namespace DOL.GS
 		public static GamePlayer CreateDummy() 
 		{
 			var player = new GamePlayer();
-			player.m_characterClass = new DefaultCharacterClass();
+			player.CharacterClass = GS.CharacterClass.None;
 			player.m_dbCharacter = new DOLCharacters();
 			return player; 
 		}
@@ -15727,6 +15458,7 @@ namespace DOL.GS
 		public GamePlayer(GameClient client, DOLCharacters dbChar)
 			: base()
 		{
+			Wallet = new Wallet(this);
 			IsJumping = false;
 			m_steed = new WeakRef(null);
 			m_rangeAttackAmmo = new WeakRef(null);
@@ -15739,7 +15471,6 @@ namespace DOL.GS
 			m_debuffBonus = new PropertyIndexer((int)eProperty.MaxProperty);
 			m_buff4Bonus = new PropertyIndexer((int)eProperty.MaxProperty);
 			m_itemBonus = new PropertyIndexer((int)eProperty.MaxProperty);
-			m_lastUniqueLocations = new GameLocation[4];
 			m_canFly = false;
 
 			CreateInventory();
@@ -15751,7 +15482,7 @@ namespace DOL.GS
 			m_customDialogCallback = null;
 			m_sitting = false;
 			m_isWireframe = false;
-			m_characterClass = new DefaultCharacterClass();
+			CharacterClass = GS.CharacterClass.None;
 			m_groupIndex = 0xFF;
 
 			m_saveInDB = true;

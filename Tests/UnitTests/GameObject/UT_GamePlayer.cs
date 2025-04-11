@@ -1,4 +1,5 @@
-﻿using DOL.GS;
+﻿using DOL.Database;
+using DOL.GS;
 using NUnit.Framework;
 
 namespace DOL.UnitTests.Gameserver
@@ -6,6 +7,12 @@ namespace DOL.UnitTests.Gameserver
     [TestFixture]
     class UT_GamePlayer
     {
+        [OneTimeSetUp]
+        public void LoadCalculators()
+        {
+            GameLiving.LoadCalculators();
+        }
+
         [Test]
         public void Constitution_Level50PlayerWith100ConstBaseBuff_Return62()
         {
@@ -16,7 +23,7 @@ namespace DOL.UnitTests.Gameserver
             int actual = player.Constitution;
 
             int expected = (int)(50 * 1.25);
-            Assert.AreEqual(expected, actual);
+            Assert.That(actual, Is.EqualTo(expected));
         }
 
         [Test]
@@ -29,7 +36,7 @@ namespace DOL.UnitTests.Gameserver
             int actual = player.Constitution;
 
             int expected = (int)(50 * 1.875);
-            Assert.AreEqual(expected, actual);
+            Assert.That(actual, Is.EqualTo(expected));
         }
 
         [Test]
@@ -42,19 +49,19 @@ namespace DOL.UnitTests.Gameserver
             int actual = player.Constitution;
 
             int expected = (int)(1.5 * 50);
-            Assert.AreEqual(expected, actual);
+            Assert.That(actual, Is.EqualTo(expected));
         }
 
         [Test]
-        public void Intelligence_Level50AnimistWith50AcuityFromItems_Return50()
+        public void Intelligence_Level50IntCasterWith50AcuityFromItems_Return50()
         {
-            var player = CreatePlayer(new CharacterClassAnimist());
+            var player = CreatePlayer(IntCaster);
             player.Level = 50;
             player.ItemBonus[eProperty.Acuity] = 50;
 
             int actual = player.Intelligence;
 
-            Assert.AreEqual(50, actual);
+            Assert.That(actual, Is.EqualTo(50));
         }
 
         [Test]
@@ -67,7 +74,7 @@ namespace DOL.UnitTests.Gameserver
 
             int actual = player.Constitution;
 
-            Assert.AreEqual(127, actual);
+            Assert.That(actual, Is.EqualTo(127));
         }
 
         [Test]
@@ -81,25 +88,25 @@ namespace DOL.UnitTests.Gameserver
 
             int actual = player.Constitution;
 
-            Assert.AreEqual(106, actual);
+            Assert.That(actual, Is.EqualTo(106));
         }
 
         [Test]
-        public void CalcValue_GetIntelligenceFromLevel50AnimistWith50Acuity_Return50()
+        public void CalcValue_GetIntelligenceFromLevel50IntCasterWith50Acuity_Return50()
         {
-            var player = CreatePlayer(new CharacterClassAnimist());
+            var player = CreatePlayer(IntCaster);
             player.Level = 50;
             player.BaseBuffBonusCategory[(int)eProperty.Acuity] = 50;
 
             int actual = player.Intelligence;
 
-            Assert.AreEqual(50, actual);
+            Assert.That(actual, Is.EqualTo(50));
         }
 
         [Test]
-        public void Intelligence_Level50AnimistWith200AcuityAnd30AcuCapEachFromItems_Return127()
+        public void Intelligence_Level50IntCasterWith200AcuityAnd30AcuCapEachFromItems_Return127()
         {
-            var player = CreatePlayer(new CharacterClassAnimist());
+            var player = CreatePlayer(IntCaster);
             player.Level = 50;
             player.ItemBonus[eProperty.Acuity] = 200;
             player.ItemBonus[eProperty.AcuCapBonus] = 30;
@@ -107,26 +114,26 @@ namespace DOL.UnitTests.Gameserver
 
             int actual = player.Intelligence;
 
-            Assert.AreEqual(127, actual);
+            Assert.That(actual, Is.EqualTo(127));
         }
 
         [Test]
-        public void Intelligence_Level50AnimistWith30AcuityAnd30IntelligenceFromItems_Return60()
+        public void Intelligence_Level50IntCasterWith30AcuityAnd30IntelligenceFromItems_Return60()
         {
-            var player = CreatePlayer(new CharacterClassAnimist());
+            var player = CreatePlayer(IntCaster);
             player.Level = 50;
             player.ItemBonus[eProperty.Acuity] = 30;
             player.ItemBonus[eProperty.Intelligence] = 30;
 
             int actual = player.Intelligence;
 
-            Assert.AreEqual(60, actual);
+            Assert.That(actual, Is.EqualTo(60));
         }
 
         [Test]
-        public void Constitution_Level30AnimistWith200ConAnd20ConCapEachViaItems_Return81()
+        public void Constitution_Level30With200ConAnd20ConCapEachViaItems_Return81()
         {
-            var player = CreatePlayer(new CharacterClassAnimist());
+            var player = CreatePlayer(IntCaster);
             player.Level = 30;
             player.ItemBonus[eProperty.Constitution] = 200;
             player.ItemBonus[eProperty.ConCapBonus] = 20;
@@ -134,7 +141,7 @@ namespace DOL.UnitTests.Gameserver
 
             int actual = player.Constitution;
 
-            Assert.AreEqual(81, actual);
+            Assert.That(actual, Is.EqualTo(81));
         }
 
         private static GamePlayer CreatePlayer()
@@ -142,11 +149,14 @@ namespace DOL.UnitTests.Gameserver
             return GamePlayer.CreateDummy();
         }
 
-        private static GamePlayer CreatePlayer(ICharacterClass charClass)
+        private static GamePlayer CreatePlayer(CharacterClass charClass)
         {
             var player = CreatePlayer();
-            player.SetCharacterClass(charClass.ID);
+            player.SetCharacterClass(charClass);
             return player;
         }
+
+        private CharacterClass IntCaster
+            => CharacterClass.Create(new DBCharacterClass() { ID=1, ManaStat = (byte)eStat.INT });
     }
 }

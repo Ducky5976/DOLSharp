@@ -26,6 +26,7 @@ using DOL.AI;
 using DOL.AI.Brain;
 using DOL.Database;
 using DOL.GS.Effects;
+using DOL.GS.Geometry;
 using DOL.GS.Housing;
 using DOL.GS.Movement;
 using DOL.GS.PacketHandler;
@@ -317,11 +318,7 @@ namespace DOL.GS.Commands
 			}
 
 			//Fill the object variables
-			mob.X = client.Player.X;
-			mob.Y = client.Player.Y;
-			mob.Z = client.Player.Z;
-			mob.CurrentRegion = client.Player.CurrentRegion;
-			mob.Heading = client.Player.Heading;
+			mob.Position = client.Player.Position;
 			mob.Level = 1;
 			mob.Realm = (eRealm)realm;
 			mob.Name = "New Mob";
@@ -384,11 +381,7 @@ namespace DOL.GS.Commands
 			GameNPC mob = new GameNPC();
 
 			//Fill the object variables
-			mob.X = client.Player.X;
-			mob.Y = client.Player.Y;
-			mob.Z = client.Player.Z;
-			mob.CurrentRegion = client.Player.CurrentRegion;
-			mob.Heading = client.Player.Heading;
+			mob.Position = client.Player.Position;
 			mob.Level = level;
 			mob.Realm = 0;
 			mob.Name = name;
@@ -462,13 +455,8 @@ namespace DOL.GS.Commands
 				GameNPC mob = new GameNPC();
 
 				//Fill the object variables
-				int x = client.Player.X + Util.Random(-radius, radius);
-				int y = client.Player.Y + Util.Random(-radius, radius);
-				mob.X = FastMath.Abs(x);
-				mob.Y = FastMath.Abs(y);
-				mob.Z = client.Player.Z;
-				mob.CurrentRegion = client.Player.CurrentRegion;
-				mob.Heading = client.Player.Heading;
+                var offset = Vector.Create(x: DOL.GS.Util.Random(-radius, radius),y: DOL.GS.Util.Random(-radius, radius));
+                mob.Position = client.Player.Position + offset;
 				mob.Level = level;
 				mob.Realm = (eRealm)realm;
 				mob.Name = name;
@@ -522,13 +510,8 @@ namespace DOL.GS.Commands
 				GameNPC mob = new GameNPC();
 
 				//Fill the object variables
-				int x = client.Player.X + DOL.GS.Util.Random(-radius, radius);
-				int y = client.Player.Y + DOL.GS.Util.Random(-radius, radius);
-				mob.X = FastMath.Abs(x);
-				mob.Y = FastMath.Abs(y);
-				mob.Z = client.Player.Z;
-				mob.CurrentRegion = client.Player.CurrentRegion;
-				mob.Heading = client.Player.Heading;
+                var offset = Vector.Create(x: DOL.GS.Util.Random(-radius, radius),y: DOL.GS.Util.Random(-radius, radius));
+                mob.Position = client.Player.Position + offset;
 				mob.Level = (byte)Util.Random(10, 50);
 				mob.Realm = (eRealm)Util.Random(1, 3);
 				mob.Name = "rand_" + i;
@@ -874,7 +857,7 @@ namespace DOL.GS.Commands
 		{
 			targetMob.Flags ^= GameNPC.eFlags.PEACE;
 			targetMob.SaveIntoDatabase();
-			client.Out.SendMessage("Mob PEACE flag is set to " + ((targetMob.Flags & GameNPC.eFlags.PEACE) != 0), eChatType.CT_System, eChatLoc.CL_SystemWindow);
+			client.Out.SendMessage("Mob PEACE flag is set to " + targetMob.IsPeaceful, eChatType.CT_System, eChatLoc.CL_SystemWindow);
 		}
 
 		private void aggro(GameClient client, GameNPC targetMob, string[] args)
@@ -1022,20 +1005,17 @@ namespace DOL.GS.Commands
 
 		private void movehere(GameClient client, GameNPC targetMob, string[] args)
 		{
-			targetMob.MoveTo(client.Player.CurrentRegionID, client.Player.X, client.Player.Y, client.Player.Z, client.Player.Heading);
+			targetMob.MoveTo(client.Player.Position);
 			targetMob.SaveIntoDatabase();
 			client.Out.SendMessage("Target Mob '" + targetMob.Name + "' moved to your location!", eChatType.CT_System, eChatLoc.CL_SystemWindow);
 		}
 
+        private string PositionToText(Position pos)
+            => $"{pos.RegionID}, {pos.X}, {pos.Y}, {pos.Z}, {pos.Orientation.InHeading}";
+
 		private void location(GameClient client, GameNPC targetMob, string[] args)
 		{
-			client.Out.SendMessage("\"" + targetMob.Name + "\", " +
-			                       targetMob.CurrentRegionID + ", " +
-			                       targetMob.X + ", " +
-			                       targetMob.Y + ", " +
-			                       targetMob.Z + ", " +
-			                       targetMob.Heading,
-			                       eChatType.CT_System, eChatLoc.CL_SystemWindow);
+			client.Out.SendMessage("\"" + targetMob.Name + "\", " + PositionToText(targetMob.Position), eChatType.CT_System, eChatLoc.CL_SystemWindow);
 		}
 
 		private void remove(GameClient client, GameNPC targetMob, string[] args)
@@ -1097,6 +1077,7 @@ namespace DOL.GS.Commands
 		private void stealth(GameClient client, GameNPC targetMob, string[] args)
 		{
 			targetMob.Flags ^= GameNPC.eFlags.STEALTH;
+			targetMob.CanStealth = targetMob.IsStealthed;
 			targetMob.SaveIntoDatabase();
 			client.Out.SendMessage("Mob STEALTH flag is set to " + ((targetMob.Flags & GameNPC.eFlags.STEALTH) != 0), eChatType.CT_System, eChatLoc.CL_SystemWindow);
 		}
@@ -1105,7 +1086,7 @@ namespace DOL.GS.Commands
 		{
 			targetMob.Flags ^= GameNPC.eFlags.TORCH;
 			targetMob.SaveIntoDatabase();
-			client.Out.SendMessage("Mob TORCH flag is set to " + ((targetMob.Flags & GameNPC.eFlags.TORCH) != 0), eChatType.CT_System, eChatLoc.CL_SystemWindow);
+			client.Out.SendMessage("Mob TORCH flag is set to " + targetMob.IsTorchLit, eChatType.CT_System, eChatLoc.CL_SystemWindow);
 		}
 
 		private void statue(GameClient client, GameNPC targetMob, string[] args)
@@ -1113,10 +1094,10 @@ namespace DOL.GS.Commands
 			targetMob.Flags ^= GameNPC.eFlags.STATUE;
 			targetMob.SaveIntoDatabase();
 
-			if ((targetMob.Flags & GameNPC.eFlags.STATUE) > 0)
+			if (targetMob.IsStatue)
 				client.Out.SendMessage("You have set the STATUE flag - you will need to use \"/debug on\" to target this NPC.", eChatType.CT_Important, eChatLoc.CL_SystemWindow);
 
-			client.Out.SendMessage(targetMob.Name + "'s STATUE flag is set to " + ((targetMob.Flags & GameNPC.eFlags.STATUE) != 0), eChatType.CT_System, eChatLoc.CL_SystemWindow);
+			client.Out.SendMessage(targetMob.Name + "'s STATUE flag is set to " + targetMob.IsStatue, eChatType.CT_System, eChatLoc.CL_SystemWindow);
 		}
 
 		private void fly(GameClient client, GameNPC targetMob, string[] args)
@@ -1135,12 +1116,11 @@ namespace DOL.GS.Commands
 
 			targetMob.Flags ^= GameNPC.eFlags.FLYING;
 
-			if ((targetMob.Flags & GameNPC.eFlags.FLYING) != 0)
-				targetMob.MoveTo(targetMob.CurrentRegionID, targetMob.X, targetMob.Y, targetMob.Z + height, targetMob.Heading);
+			if (targetMob.IsFlying) targetMob.MoveTo(targetMob.Position + Vector.Create(z: height));
 
 			targetMob.SaveIntoDatabase();
 
-			client.Out.SendMessage(targetMob.Name + "'s FLYING flag is set to " + ((targetMob.Flags & GameNPC.eFlags.FLYING) != 0), eChatType.CT_System, eChatLoc.CL_SystemWindow);
+			client.Out.SendMessage(targetMob.Name + "'s FLYING flag is set to " + targetMob.IsFlying, eChatType.CT_System, eChatLoc.CL_SystemWindow);
 		}
 
 		private void swimming(GameClient client, GameNPC targetMob, string[] args)
@@ -1297,7 +1277,7 @@ namespace DOL.GS.Commands
 					hours = respawn.Hours + " hours ";
 
 				info.Add(" + Respawn: " + days + hours + respawn.Minutes + " minutes " + respawn.Seconds + " seconds");
-				info.Add(" + SpawnPoint:  " + targetMob.SpawnPoint.X + ", " + targetMob.SpawnPoint.Y + ", " + targetMob.SpawnPoint.Z);
+				info.Add(" + SpawnPoint:  " + targetMob.SpawnPosition.X + ", " + targetMob.SpawnPosition.Y + ", " + targetMob.SpawnPosition.Z);
 			}
 
 			info.Add(" ");
@@ -1366,7 +1346,8 @@ namespace DOL.GS.Commands
 
 			info.Add(" ");
 
-			info.Add(" + Position (X, Y, Z, H):  " + targetMob.X + ", " + targetMob.Y + ", " + targetMob.Z + ", " + targetMob.Heading);
+			info.Add(" + Position (X, Y, Z, H):  " + targetMob.Position.X + ", " + targetMob.Position.Y + ", " + targetMob.Position.Z 
+                + ", " + targetMob.Orientation.InHeading);
 
 			if (targetMob.GuildName != null && targetMob.GuildName.Length > 0)
 				info.Add(" + Guild: " + targetMob.GuildName);
@@ -1389,7 +1370,7 @@ namespace DOL.GS.Commands
 				info.Add(" + Equipment Template ID: " + targetMob.EquipmentTemplateID);
 
 			if (targetMob.Inventory != null)
-				info.Add(" + Inventory: " + targetMob.Inventory.AllItems.Count + " items");
+				info.Add(" + Inventory: " + targetMob.Inventory.Count + " items");
 
 			info.Add(" + Quests to give:  " + targetMob.QuestListToGive.Count);
 
@@ -1632,8 +1613,18 @@ namespace DOL.GS.Commands
 					player.Out.SendNPCsQuestEffect(targetMob, targetMob.GetQuestIndicator(player));
 				}
 				client.Out.SendMessage(targetMob.DataQuestList.Count + " Data Quests loaded for this mob.", eChatType.CT_System, eChatLoc.CL_SystemWindow);
-			}
-			catch (Exception ex)
+
+                // dataquest reward quests
+                GameObject.FillDQRewardQCache();
+                targetMob.LoadDQRewardQs(client.Player);
+                foreach (GamePlayer player in targetMob.GetPlayersInRadius(WorldMgr.VISIBILITY_DISTANCE))
+                {
+                    player.Out.SendNPCsQuestEffect(targetMob, targetMob.GetQuestIndicator(player));
+                }
+
+                client.Out.SendMessage(targetMob.DQRewardQList.Count + " DQRewardsQs loaded for this mob.", eChatType.CT_System, eChatLoc.CL_SystemWindow);
+            }
+            catch (Exception ex)
 			{
 				Log.Error("Error refreshing quests.", ex);
 				throw;
@@ -2354,11 +2345,7 @@ namespace DOL.GS.Commands
 			targetMob.StopAttack();
 			targetMob.StopCurrentSpellcast();
 
-			mob.X = targetMob.X;
-			mob.Y = targetMob.Y;
-			mob.Z = targetMob.Z;
-			mob.CurrentRegion = targetMob.CurrentRegion;
-			mob.Heading = targetMob.Heading;
+			mob.Position = targetMob.Position;
 			mob.Level = targetMob.Level;
 			mob.Realm = targetMob.Realm;
 			mob.Name = targetMob.Name;
@@ -2521,11 +2508,7 @@ namespace DOL.GS.Commands
 			}
 
 			//Fill the object variables
-			mob.X = client.Player.X;
-			mob.Y = client.Player.Y;
-			mob.Z = client.Player.Z;
-			mob.CurrentRegion = client.Player.CurrentRegion;
-			mob.Heading = client.Player.Heading;
+			mob.Position = client.Player.Position;
 			mob.Level = targetMob.Level;
 			mob.Realm = targetMob.Realm;
 			mob.Name = targetMob.Name;
@@ -2595,7 +2578,7 @@ namespace DOL.GS.Commands
 			mob.LoadedFromScript = false;
 			mob.SaveIntoDatabase();
 			client.Out.SendMessage("Mob created: OID=" + mob.ObjectID, eChatType.CT_System, eChatLoc.CL_SystemWindow);
-			if ((mob.Flags & GameNPC.eFlags.PEACE) != 0)
+			if (mob.IsPeaceful)
 			{
 				// because copying 100 mobs with their peace flag set is not fun
 				client.Out.SendMessage("This mobs PEACE flag is set!", eChatType.CT_Important, eChatLoc.CL_SystemWindow);
@@ -2650,11 +2633,7 @@ namespace DOL.GS.Commands
 			if (targetMob == null)
 			{
 				GameNPC mob = new GameNPC(template);
-				mob.X = client.Player.X;
-				mob.Y = client.Player.Y;
-				mob.Z = client.Player.Z;
-				mob.Heading = client.Player.Heading;
-				mob.CurrentRegion = client.Player.CurrentRegion;
+				mob.Position = client.Player.Position;
 				mob.AddToWorld();
 				DisplayMessage(client, $"Created npc based on template {id}" );
 			}

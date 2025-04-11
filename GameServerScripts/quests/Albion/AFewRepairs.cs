@@ -32,6 +32,8 @@ using System;
 using System.Reflection;
 using DOL.Database;
 using DOL.Events;
+using DOL.GS.Finance;
+using DOL.GS.Geometry;
 using DOL.GS.PacketHandler;
 using log4net;
 /* I suggest you declare yourself some namespaces for your quests
@@ -159,13 +161,9 @@ namespace DOL.GS.Quests.Albion
                 if (log.IsWarnEnabled)
                     log.Warn("Could not find " + briceYarley.Name + ", creating him ...");
                 briceYarley.Realm = eRealm.Albion;
-                briceYarley.CurrentRegionID = 1;
                 briceYarley.Size = 51;
                 briceYarley.Level = 43;
-                briceYarley.X = 370236;
-                briceYarley.Y = 679755;
-                briceYarley.Z = 5558;
-                briceYarley.Heading = 2468;
+                briceYarley.Position = Position.Create(regionID: 1, x: 370236, y: 679755, z: 5558, heading: 2468);
                 briceYarley.MaxSpeedBase = 191;
 
                 //You don't have to store the created mob in the db if you don't want,
@@ -189,13 +187,9 @@ namespace DOL.GS.Quests.Albion
                 if (log.IsWarnEnabled)
                     log.Warn("Could not find " + patrickYarley.Name + ", creating him ...");
                 patrickYarley.Realm = eRealm.Albion;
-                patrickYarley.CurrentRegionID = 1;
                 patrickYarley.Size = 51;
                 patrickYarley.Level = 43;
-                patrickYarley.X = 371752;
-                patrickYarley.Y = 680486;
-                patrickYarley.Z = 5595;
-                patrickYarley.Heading = 0;
+                patrickYarley.Position = Position.Create(regionID: 1, x: 371752, y: 680486, z: 5595, heading: 0);
                 patrickYarley.MaxSpeedBase = 200;
 
                 //You don't have to store the created mob in the db if you don't want,
@@ -348,7 +342,7 @@ namespace DOL.GS.Quests.Albion
                 else
                 {
                     //Player hasn't the quest:
-                    briceYarley.SayTo(player, "Welcome to Cornwall, "+player.CharacterClass.Name+". My family has a bit of a [problem] and we would be grateful if you could lend a hand.");
+                    briceYarley.SayTo(player, "Welcome to Cornwall, "+player.Salutation+". My family has a bit of a [problem] and we would be grateful if you could lend a hand.");
                     return;
                 }
             }
@@ -693,7 +687,8 @@ namespace DOL.GS.Quests.Albion
             //Give reward to player here ...
 			m_questPlayer.GainExperience(GameLiving.eXPSource.Quest, (long)((m_questPlayer.ExperienceForNextLevel - m_questPlayer.ExperienceForCurrentLevel) / 6.57), true);
             long money = Money.GetMoney(0, 0, 0, 81, 30 + Util.Random(60));
-            m_questPlayer.AddMoney(money, "You are awarded 81 silver and some copper!");
+            m_questPlayer.AddMoney(Currency.Copper.Mint(money));
+            m_questPlayer.SendSystemMessage("You are awarded 81 silver and some copper!");
             InventoryLogging.LogInventoryAction("(QUEST;" + Name + ")", m_questPlayer, eInventoryActionType.Quest, money);
 
         }

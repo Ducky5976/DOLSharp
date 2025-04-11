@@ -1,9 +1,7 @@
-using System;
 using log4net;
 using System.Reflection;
 using DOL.GS;
 using DOL.GS.Keeps;
-using DOL.GS.Movement;
 
 namespace DOL.AI.Brain
 {
@@ -77,18 +75,18 @@ namespace DOL.AI.Brain
 				// Tolakram - always clear the aggro list so if this is done by mistake the list will correctly re-fill on next think
 				ClearAggroList();
 
-				if (guard.GetDistanceTo(guard.SpawnPoint, 0) > 50)
+				if (guard.Coordinate.DistanceTo(guard.SpawnPosition, ignoreZ: true) > 50)
 				{
 					guard.WalkToSpawn();
 				}
 			}
 			//Eden - Portal Keeps Guards max distance
-            if (guard.Level > 200 && !guard.IsWithinRadius(guard.SpawnPoint, 2000))
+            if (guard.Level > 200 && guard.Coordinate.DistanceTo(guard.SpawnPosition) > 2000)
 			{
 				ClearAggroList();
 				guard.WalkToSpawn();
 			}
-            else if (guard.InCombat == false && guard.IsWithinRadius(guard.SpawnPoint, 6000) == false)
+            else if (guard.InCombat == false && guard.Coordinate.DistanceTo(guard.SpawnPosition) > 6000)
 			{
 				ClearAggroList();
 				guard.WalkToSpawn();
@@ -115,10 +113,7 @@ namespace DOL.AI.Brain
 		/// </summary>
 		protected override void CheckPlayerAggro()
 		{
-			if (Body.AttackState || Body.CurrentSpellHandler != null)
-			{
-				return;
-			}
+			if (HasAggro || Body.CurrentSpellHandler != null) return;
 
 			foreach (GamePlayer player in Body.GetPlayersInRadius(WorldMgr.VISIBILITY_DISTANCE))
 			{
@@ -132,14 +127,14 @@ namespace DOL.AI.Brain
 					if (Body is GuardStealther == false && player.IsStealthed)
 						continue;
 
-					WarMapMgr.AddGroup((byte)player.CurrentZone.ID, player.X, player.Y, player.Name, (byte)player.Realm);
+					WarMapMgr.AddGroup(player.Position, player.Name, (byte)player.Realm);
 
 					if (DOL.GS.ServerProperties.Properties.ENABLE_DEBUG)
 					{
 						Body.Say("Want to attack player " + player.Name);
 					}
 
-					AddToAggroList(player, player.EffectiveLevel << 1);
+					AddToAggroList(player, 1);
 					return;
 				}
 			}
@@ -150,8 +145,7 @@ namespace DOL.AI.Brain
 		/// </summary>
 		protected override void CheckNPCAggro()
 		{
-			if (Body.AttackState || Body.CurrentSpellHandler != null)
-				return;
+			if (HasAggro || Body.CurrentSpellHandler != null) return;
 
 			foreach (GameNPC npc in Body.GetNPCsInRadius((ushort)AggroRange))
 			{
@@ -170,14 +164,14 @@ namespace DOL.AI.Brain
 						continue;
 					}
 
-					WarMapMgr.AddGroup((byte)player.CurrentZone.ID, player.X, player.Y, player.Name, (byte)player.Realm);
+					WarMapMgr.AddGroup(player.Position, player.Name, (byte)player.Realm);
 
 					if (DOL.GS.ServerProperties.Properties.ENABLE_DEBUG)
 					{
 						Body.Say("Want to attack player " + player.Name + " pet " + npc.Name);
 					}
 
-					AddToAggroList(npc, (npc.Level + 1) << 1);
+					AddToAggroList(npc, 1);
 					return;
 				}
 			}

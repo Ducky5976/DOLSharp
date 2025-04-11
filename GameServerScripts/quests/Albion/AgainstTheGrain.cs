@@ -33,6 +33,8 @@ using System.Reflection;
 using DOL.AI.Brain;
 using DOL.Database;
 using DOL.Events;
+using DOL.GS.Finance;
+using DOL.GS.Geometry;
 using DOL.GS.PacketHandler;
 using log4net;
 /* I suggest you declare yourself some namespaces for your quests
@@ -144,7 +146,6 @@ namespace DOL.GS.Quests.Albion
 					log.Warn("Could not find " + laridiaTheMinstrel.Name + ", creating him ...");
 				laridiaTheMinstrel.GuildName = "Part of " + questTitle + " Quest";
 				laridiaTheMinstrel.Realm = eRealm.Albion;
-				laridiaTheMinstrel.CurrentRegionID = 1;
 
 				GameNpcInventoryTemplate template = new GameNpcInventoryTemplate();
 				template.AddNPCEquipment(eInventorySlot.HandsArmor, 137, 9);
@@ -158,10 +159,7 @@ namespace DOL.GS.Quests.Albion
 
 				laridiaTheMinstrel.Size = 49;
 				laridiaTheMinstrel.Level = 25;
-				laridiaTheMinstrel.X = 562280;
-				laridiaTheMinstrel.Y = 512243;
-				laridiaTheMinstrel.Z = 2448 ;
-				laridiaTheMinstrel.Heading = 3049;
+                laridiaTheMinstrel.Position = Position.Create(regionID: 1, x: 562280, y: 512243, z: 2448 , heading: 3049);
 
 				//You don't have to store the created mob in the db if you don't want,
 				//it will be recreated each time it is not found, just comment the following
@@ -186,7 +184,6 @@ namespace DOL.GS.Quests.Albion
 					log.Warn("Could not find " + farmerAsma.Name + ", creating him ...");
 				farmerAsma.GuildName = "Part of " + questTitle + " Quest";
 				farmerAsma.Realm = eRealm.Albion;
-				farmerAsma.CurrentRegionID = 1;
 
 				GameNpcInventoryTemplate template = new GameNpcInventoryTemplate();
 				template.AddNPCEquipment(eInventorySlot.TorsoArmor, 31);
@@ -198,10 +195,7 @@ namespace DOL.GS.Quests.Albion
 
 				farmerAsma.Size = 50;
 				farmerAsma.Level = 35;
-				farmerAsma.X = 563939;
-				farmerAsma.Y = 509234;
-				farmerAsma.Z = 2744 ;
-				farmerAsma.Heading = 21;
+                farmerAsma.Position = Position.Create(regionID: 1, x: 563939, y: 509234, z: 2744 , heading: 21);
 
 				//You don't have to store the created mob in the db if you don't want,
 				//it will be recreated each time it is not found, just comment the following
@@ -546,7 +540,8 @@ namespace DOL.GS.Quests.Albion
 			//Give reward to player here ...
 
 			m_questPlayer.GainExperience(GameLiving.eXPSource.Quest, 10 + (m_questPlayer.Level * 5), true);
-			m_questPlayer.AddMoney(Money.GetMoney(0, 0, 0, 0, 25 + m_questPlayer.Level), "You are awarded "+(25+m_questPlayer.Level)+" copper!");
+			m_questPlayer.AddMoney(Currency.Copper.Mint(25 + m_questPlayer.Level));
+			m_questPlayer.SendSystemMessage("You are awarded "+(25+m_questPlayer.Level)+" copper!");
 		    InventoryLogging.LogInventoryAction("(QUEST;" + Name + ")", m_questPlayer, eInventoryActionType.Quest, 25 + m_questPlayer.Level);
 		}
 	}

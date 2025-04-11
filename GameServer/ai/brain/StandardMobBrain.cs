@@ -29,6 +29,8 @@ using DOL.GS.SkillHandler;
 using DOL.GS.Keeps;
 using DOL.Language;
 using log4net;
+using System.Numerics;
+using DOL.GS.Geometry;
 
 namespace DOL.AI.Brain
 {
@@ -117,7 +119,7 @@ namespace DOL.AI.Brain
 			// check for returning to home if to far away
 			if (Body.MaxDistance != 0 && !Body.IsReturningHome)
 			{
-				int distance = Body.GetDistanceTo( Body.SpawnPoint );
+				int distance = (int)Body.Coordinate.DistanceTo(Body.SpawnPosition);
 				int maxdistance = Body.MaxDistance > 0 ? Body.MaxDistance : -Body.MaxDistance * AggroRange / 100;
 				if (maxdistance > 0 && distance > maxdistance)
 				{
@@ -129,39 +131,31 @@ namespace DOL.AI.Brain
 			//If this NPC can randomly walk around, we allow it to walk around
 			if (!Body.AttackState && CanRandomWalk && !Body.IsRoaming && Util.Chance(DOL.GS.ServerProperties.Properties.GAMENPC_RANDOMWALK_CHANCE))
 			{
-				IPoint3D target = CalcRandomWalkTarget();
-				if (target != null)
-				{
-					if (Util.IsNearDistance(target.X, target.Y, target.Z, Body.X, Body.Y, Body.Z, GameNPC.CONST_WALKTOTOLERANCE))
-					{
-						Body.TurnTo(Body.GetHeading(target));
-					}
-					else
-					{
-						Body.WalkTo(target, 50);
-					}
+                var target = GetRandomWalkTarget();
+                if (target.DistanceTo(Body.Coordinate) <= GameNPC.CONST_WALKTOTOLERANCE)
+                {
+                    Body.TurnTo(target);
+                }
+                else
+                {
+                    Body.PathTo(target, 50);
+                }
 
-					Body.FireAmbientSentence(GameNPC.eAmbientTrigger.roaming);
-				}
+                Body.FireAmbientSentence(GameNPC.eAmbientTrigger.roaming);
 			}
 			//If the npc can move, and the npc is not casting, not moving, and not attacking or in combat
 			else if (Body.MaxSpeedBase > 0 && Body.CurrentSpellHandler == null && !Body.IsMoving && !Body.AttackState && !Body.InCombat && !Body.IsMovingOnPath)
 			{
-				//If the npc is not at it's spawn position, we tell it to walk to it's spawn position
-				//Satyr: If we use a tolerance to stop their Way back home we also need the same
-				//Tolerance to check if we need to go home AGAIN, otherwise we might be told to go home
-				//for a few units only and this may end before the next Arrive-At-Target Event is fired and in this case
-				//We would never lose the state "IsReturningHome", which is then followed by other erros related to agro again to players
-				if ( !Util.IsNearDistance( Body.X, Body.Y, Body.Z, Body.SpawnPoint.X, Body.SpawnPoint.Y, Body.SpawnPoint.Z, GameNPC.CONST_WALKTOTOLERANCE ) )
+                if (Body.Coordinate.DistanceTo(Body.SpawnPosition) > GameNPC.CONST_WALKTOTOLERANCE)
 					Body.WalkToSpawn();
-				else if (Body.Heading != Body.SpawnHeading)
-					Body.Heading = Body.SpawnHeading;
+				else if (Body.Orientation != Body.SpawnPosition.Orientation)
+					Body.Orientation = Body.SpawnPosition.Orientation;
 			}
 
 			//Mob will now always walk on their path
 			if (Body.MaxSpeedBase > 0 && Body.CurrentSpellHandler == null && !Body.IsMoving
-			    && !Body.AttackState && !Body.InCombat && !Body.IsMovingOnPath
-			    && Body.PathID != null && Body.PathID != "" && Body.PathID != "NULL")
+				&& !Body.AttackState && !Body.InCombat && !Body.IsMovingOnPath
+				&& Body.PathID != null && Body.PathID != "" && Body.PathID != "NULL")
 			{
 				PathPoint path = MovementMgr.LoadPath(Body.PathID);
 				if (path != null)
@@ -176,7 +170,7 @@ namespace DOL.AI.Brain
 			}
 
 			//If we are not attacking, and not casting, and not moving, and we aren't facing our spawn heading, we turn to the spawn heading
-			if( !Body.IsMovingOnPath && !Body.InCombat && !Body.AttackState && !Body.IsCasting && !Body.IsMoving && Body.IsWithinRadius( Body.SpawnPoint, 500 ) == false )
+			if( !Body.IsMovingOnPath && !Body.InCombat && !Body.AttackState && !Body.IsCasting && !Body.IsMoving && Body.Coordinate.DistanceTo(Body.SpawnPosition) > 500)
 			{
 				Body.WalkToSpawn(); // Mobs do not walk back at 2x their speed..
 				Body.IsReturningHome = false; // We are returning to spawn but not the long walk home, so aggro still possible
@@ -225,6 +219,17 @@ namespace DOL.AI.Brain
 					Body.TargetObject = null;
 				}
 			}
+
+			CheckStealth();
+		}
+
+		/// <summary>
+		/// Check if the NPC can be stealthed
+		/// </summary>
+		public virtual void CheckStealth()
+		{
+			if (Body.CanStealth && !Body.IsStealthed && !Body.InCombat && !Body.IsCasting)
+				Body.Stealth(true);
 		}
 
 		/// <summary>
@@ -232,8 +237,7 @@ namespace DOL.AI.Brain
 		/// </summary>
 		protected virtual void CheckNPCAggro()
 		{
-			if (Body.AttackState)
-				return;
+			if (HasAggro) return;
 
 			foreach (GameNPC npc in Body.GetNPCsInRadius((ushort)AggroRange, Body.CurrentRegion.IsDungeon ? false : true))
 			{
@@ -248,9 +252,9 @@ namespace DOL.AI.Brain
 				if (CalculateAggroLevelToTarget(npc) > 0)
 				{
 					if (npc.Brain is ControlledNpcBrain) // This is a pet or charmed creature, checkLOS
-						AddToAggroList(npc, (npc.Level + 1) << 1, true);
+						AddToAggroList(npc, 1, true);
 					else
-						AddToAggroList(npc, (npc.Level + 1) << 1);
+						AddToAggroList(npc, 1);
 				}
 			}
 		}
@@ -260,9 +264,7 @@ namespace DOL.AI.Brain
 		/// </summary>
 		protected virtual void CheckPlayerAggro()
 		{
-			//Check if we are already attacking, return if yes
-			if (Body.AttackState)
-				return;
+			if (HasAggro) return;
 
 			foreach (GamePlayer player in Body.GetPlayersInRadius((ushort)AggroRange, Body.CurrentZone.IsDungeon ? false : true))
 			{
@@ -293,7 +295,7 @@ namespace DOL.AI.Brain
 
 				if (CalculateAggroLevelToTarget(player) > 0)
 				{
-					AddToAggroList(player, player.EffectiveLevel << 1, true);
+					AddToAggroList(player, 1, true);
 				}
 			}
 		}
@@ -317,6 +319,17 @@ namespace DOL.AI.Brain
 		{
 			return false;
 		}
+
+        public virtual Coordinate GetFormationCoordinate(Coordinate loc)
+        {
+            var x = loc.X;
+            var y = loc.Y;
+            var z = loc.Z;
+            var isNotInFormation = !CheckFormation(ref x, ref y, ref z);
+            if(isNotInFormation) return Coordinate.Nowhere;
+            
+            return Coordinate.Create(x,y,z);
+        }
 
 		/// <summary>
 		/// Checks the Abilities
@@ -373,17 +386,7 @@ namespace DOL.AI.Brain
 		/// Checks whether living has someone on its aggrolist
 		/// </summary>
 		public virtual bool HasAggro
-		{
-			get
-			{
-				bool hasAggro = false;
-				lock ((m_aggroTable as ICollection).SyncRoot)
-				{
-					hasAggro = (m_aggroTable.Count > 0);
-				}
-				return hasAggro;
-			}
-		}
+			=> AggroTable.Count > 0;
 
 		/// <summary>
 		/// Add aggro table of this brain to that of another living.
@@ -520,9 +523,9 @@ namespace DOL.AI.Brain
 					if (protectAmount > 0)
 					{
 						aggroamount -= protectAmount;
-						protect.ProtectSource.Out.SendMessage(LanguageMgr.GetTranslation(protect.ProtectSource.Client.Account.Language, "AI.Brain.StandardMobBrain.YouProtDist", player.GetName(0, false),
-						                                                                 Body.GetName(0, false, protect.ProtectSource.Client.Account.Language, Body)), eChatType.CT_System, eChatLoc.CL_SystemWindow);
-						//player.Out.SendMessage("You are protected by " + protect.ProtectSource.GetName(0, false) + " from " + Body.GetName(0, false) + ".", eChatType.CT_System, eChatLoc.CL_SystemWindow);
+						if (protect.ProtectSource is GamePlayer playerSource)
+							playerSource.Out.SendMessage(LanguageMgr.GetTranslation(playerSource.Client.Account.Language, "AI.Brain.StandardMobBrain.YouProtDist", player.GetName(0, false),
+								Body.GetName(0, false, playerSource.Client.Account.Language, Body)), eChatType.CT_System, eChatLoc.CL_SystemWindow);
 
 						lock ((m_aggroTable as ICollection).SyncRoot)
 						{
@@ -656,7 +659,7 @@ namespace DOL.AI.Brain
 					if (living.IsAlive == false ||
 					    living.ObjectState != GameObject.eObjectState.Active ||
 					    living.IsStealthed ||
-					    Body.GetDistanceTo(living, 0) > MAX_AGGRO_LIST_DISTANCE ||
+					    Body.GetDistanceTo(living.Position, 0) > MAX_AGGRO_LIST_DISTANCE ||
 					    GameServer.ServerRules.IsAllowedToAttack(Body, living, true) == false)
 					{
 						removable.Add(living);
@@ -821,7 +824,7 @@ namespace DOL.AI.Brain
 					// first check to see if the healer is in our aggrolist so we don't go attacking anyone who heals
 					if (m_aggroTable.ContainsKey(eArgs.HealSource as GameLiving))
 					{
-						if (eArgs.HealSource is GamePlayer || (eArgs.HealSource is GameNPC && (((GameNPC)eArgs.HealSource).Flags & GameNPC.eFlags.PEACE) == 0))
+						if (eArgs.HealSource is GamePlayer || (eArgs.HealSource is GameNPC && !((GameNPC)eArgs.HealSource).IsPeaceful))
 						{
 							AddToAggroList((GameLiving)eArgs.HealSource, eArgs.HealAmount);
 						}
@@ -1552,18 +1555,33 @@ namespace DOL.AI.Brain
 			}
 		}
 
-		public virtual IPoint3D CalcRandomWalkTarget()
-		{
-			int maxRoamingRadius = Body.CurrentRegion.IsDungeon ? 5 : 500;
+        [Obsolete("Use GetRandomWalkTarget() instead.")]
+        public virtual IPoint3D CalcRandomWalkTarget()
+        {
+            var randomPos = GetRandomWalkTarget();
+            return new Point3D(randomPos.X, randomPos.Y, randomPos.Z);
+        }
 
-			if (Body.RoamingRange > 0)
-				maxRoamingRadius = Body.RoamingRange;
+        public virtual Coordinate GetRandomWalkTarget()
+        {
+            if (PathCalculator.IsSupported(Body))
+            {
+                int radius = Body.RoamingRange > 0 ? Body.RoamingRange : 500;
+                var target = PathingMgr.Instance.GetRandomPointAsync(Body.CurrentZone, Body.Coordinate, radius);
+                if (target.HasValue)
+                    return Coordinate.Create(x: (int)target.Value.X, y: (int)target.Value.Y, z: (int)target.Value.Z);
+            }
 
-			double targetX = Body.SpawnPoint.X + Util.Random( -maxRoamingRadius, maxRoamingRadius);
-			double targetY = Body.SpawnPoint.Y + Util.Random( -maxRoamingRadius, maxRoamingRadius);
+            int maxRoamingRadius = Body.CurrentRegion.IsDungeon ? 5 : 500;
 
-			return new Point3D( (int)targetX, (int)targetY, Body.SpawnPoint.Z );
-		}
+            if (Body.RoamingRange > 0)
+                maxRoamingRadius = Body.RoamingRange;
+
+            double targetX = Body.SpawnPosition.X + Util.Random(-maxRoamingRadius, maxRoamingRadius);
+            double targetY = Body.SpawnPosition.Y + Util.Random(-maxRoamingRadius, maxRoamingRadius);
+
+            return Coordinate.Create(x: (int)targetX, y: (int)targetY, z: Body.SpawnPosition.Z);
+        }
 
 		#endregion
 		#region DetectDoor
@@ -1571,7 +1589,7 @@ namespace DOL.AI.Brain
 		{
 			ushort range= (ushort)((ThinkInterval/800)*Body.CurrentWayPoint.MaxSpeed);
 			
-			foreach (IDoor door in Body.CurrentRegion.GetDoorsInRadius(Body.X, Body.Y, Body.Z, range, false))
+			foreach (IDoor door in Body.CurrentRegion.GetDoorsInRadius(Body.Coordinate, range, false))
 			{
 				if (door is GameKeepDoor)
 				{

@@ -24,7 +24,9 @@
  * 
  */
 using System;
+using DOL.GS.Geometry;
 using DOL.GS.PacketHandler;
+using DOL.Language;
 
 namespace DOL.GS.Commands
 {
@@ -42,7 +44,7 @@ namespace DOL.GS.Commands
 
 			if (args.Length < 3)
 			{
-				client.Out.SendMessage("Please enter X and Y coordinates.", eChatType.CT_System, eChatLoc.CL_SystemWindow);
+				client.Out.SendMessage(LanguageMgr.GetTranslation(client, "Scripts.Players.Facegloc.Coordinates"), eChatType.CT_System, eChatLoc.CL_SystemWindow);
 				return;
 			}
 
@@ -54,12 +56,11 @@ namespace DOL.GS.Commands
 			}
 			catch (Exception)
 			{
-				client.Out.SendMessage("Please enter X and Y coordinates.", eChatType.CT_System, eChatLoc.CL_SystemWindow);
+				client.Out.SendMessage(LanguageMgr.GetTranslation(client, "Scripts.Players.Facegloc.Coordinates"), eChatType.CT_System, eChatLoc.CL_SystemWindow);
 				return;
 			}
 
-            ushort direction = client.Player.GetHeading( new Point2D( x, y ) );
-			client.Player.Heading = direction;
+            client.Player.TurnTo(Coordinate.Create(x: x, y: y ));
 			client.Out.SendPlayerJump(true);
 		}
 	}

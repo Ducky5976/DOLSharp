@@ -28,6 +28,7 @@ using DOL.GS.PacketHandler;
 using DOL.GS.RealmAbilities;
 using DOL.GS.SkillHandler;
 using log4net;
+using DOL.GS.Geometry;
 
 namespace DOL.AI.Brain
 {
@@ -48,9 +49,7 @@ namespace DOL.AI.Brain
 		public static readonly short MIN_ENEMY_FOLLOW_DIST = 90;
 		public static readonly short MAX_ENEMY_FOLLOW_DIST = 512;
 
-		protected int m_tempX = 0;
-		protected int m_tempY = 0;
-		protected int m_tempZ = 0;
+        protected Coordinate tempPosition = Coordinate.Nowhere;
 
 		/// <summary>
 		/// Holds the controlling player of this brain
@@ -236,8 +235,8 @@ namespace DOL.AI.Brain
 					Body.TargetObject = null;
 					if (WalkState == eWalkState.Follow)
 						FollowOwner();
-					else if (m_tempX > 0 && m_tempY > 0 && m_tempZ > 0)
-						Body.WalkTo(m_tempX, m_tempY, m_tempZ, Body.MaxSpeed);
+					else if (!tempPosition.Equals(Coordinate.Nowhere))
+						Body.PathTo(tempPosition, Body.MaxSpeed);
 				}
 				AttackMostWanted();
 			}
@@ -276,9 +275,7 @@ namespace DOL.AI.Brain
 		/// </summary>
 		public virtual void Stay()
 		{
-			m_tempX = Body.X;
-			m_tempY = Body.Y;
-			m_tempZ = Body.Z;
+            tempPosition = Body.Coordinate;
 			WalkState = eWalkState.Stay;
 			Body.StopFollowing();
 		}
@@ -288,12 +285,10 @@ namespace DOL.AI.Brain
 		/// </summary>
 		public virtual void ComeHere()
 		{
-			m_tempX = Body.X;
-			m_tempY = Body.Y;
-			m_tempZ = Body.Z;
+            tempPosition = Body.Coordinate;
 			WalkState = eWalkState.ComeHere;
 			Body.StopFollowing();
-			Body.WalkTo(Owner, Body.MaxSpeed);
+			Body.PathTo(Owner.Coordinate, Body.MaxSpeed);
 		}
 
 		/// <summary>
@@ -302,12 +297,10 @@ namespace DOL.AI.Brain
 		/// <param name="target"></param>
 		public virtual void Goto(GameObject target)
 		{
-			m_tempX = Body.X;
-			m_tempY = Body.Y;
-			m_tempZ = Body.Z;
+			tempPosition = Body.Coordinate;
 			WalkState = eWalkState.GoTarget;
 			Body.StopFollowing();
-			Body.WalkTo(target, Body.MaxSpeed);
+			Body.PathTo(target.Coordinate, Body.MaxSpeed);
 		}
 
 		public virtual void SetAggressionState(eAggressionState state)
@@ -413,7 +406,8 @@ namespace DOL.AI.Brain
 
 			// Check for buffs, heals, etc, interrupting melee if not being interrupted
 			// Only prevent casting if we are ordering pet to come to us or go to target
-			if (Owner is GameNPC || (Owner is GamePlayer && WalkState != eWalkState.ComeHere && WalkState != eWalkState.GoTarget))
+			var petIsNotOrderedElsewhere = Owner is GamePlayer && WalkState != eWalkState.ComeHere && WalkState != eWalkState.GoTarget;
+			if ((Owner is GameNPC || petIsNotOrderedElsewhere) && !Body.InCombat)
 				CheckSpells(eCheckSpellType.Defensive);
 
 			// Stop hunting player entering in steath
@@ -436,8 +430,10 @@ namespace DOL.AI.Brain
 			if (IsActive && m_aggressionState != eAggressionState.Passive)
 				CheckSpells(eCheckSpellType.Offensive);
 
-			if (!Body.AttackState && WalkState == eWalkState.Follow && Owner != null)
+			if (!Body.AttackState && WalkState == eWalkState.Follow && Owner != null && !Body.InCombat)
 				Follow(Owner);
+
+			CheckStealth();
 		}
 
 		/// <summary>
@@ -468,7 +464,7 @@ namespace DOL.AI.Brain
 						case Abilities.Protect:
 							{
 								if (GetPlayerOwner() is GamePlayer player)
-									new ProtectEffect().Start(player);
+									new ProtectEffect().Start(Body, player);
 								break;
 							}
 						case Abilities.ChargeAbility:
@@ -991,7 +987,7 @@ namespace DOL.AI.Brain
 					if (living.IsMezzed ||
 					    living.IsAlive == false ||
 					    living.ObjectState != GameObject.eObjectState.Active ||
-					    Body.GetDistanceTo(living, 0) > MAX_AGGRO_LIST_DISTANCE ||
+					    Body.GetDistanceTo(living.Position, 0) > MAX_AGGRO_LIST_DISTANCE ||
 					    GameServer.ServerRules.IsAllowedToAttack(this.Body, living, true) == false)
 					{
 						removable.Add(living);
@@ -1108,9 +1104,9 @@ namespace DOL.AI.Brain
 				{
 					FollowOwner();
 				}
-				else if (m_tempX > 0 && m_tempY > 0 && m_tempZ > 0)
+				else if (!tempPosition.Equals(Coordinate.Nowhere))
 				{
-					Body.WalkTo(m_tempX, m_tempY, m_tempZ, Body.MaxSpeed);
+					Body.PathTo(tempPosition, Body.MaxSpeed);
 				}
 			}
 		}

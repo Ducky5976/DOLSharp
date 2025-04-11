@@ -1,6 +1,7 @@
 ﻿using NUnit.Framework;
 using DOL.GS;
 using DOL.GS.PropertyCalc;
+using DOL.Database;
 
 namespace DOL.UnitTests.Gameserver.PropertyCalc
 {
@@ -15,7 +16,7 @@ namespace DOL.UnitTests.Gameserver.PropertyCalc
 
             int actual = StatCalculator.CalcValueFromBuffs(npc, eProperty.Constitution);
 
-            Assert.AreEqual(100, actual);
+            Assert.That(actual, Is.EqualTo(100));
         }
 
         [Test]
@@ -28,7 +29,7 @@ namespace DOL.UnitTests.Gameserver.PropertyCalc
             int actual = StatCalculator.CalcValueFromBuffs(player, eProperty.Constitution);
 
             int expected = (int)(50 * 1.25);
-            Assert.AreEqual(expected, actual);
+            Assert.That(actual, Is.EqualTo(expected));
         }
 
         [Test]
@@ -41,7 +42,7 @@ namespace DOL.UnitTests.Gameserver.PropertyCalc
             int actual = StatCalculator.CalcValueFromBuffs(player, eProperty.Constitution);
 
             int expected = (int)(50 * 1.875);
-            Assert.AreEqual(expected, actual);
+            Assert.That(actual, Is.EqualTo(expected));
         }
 
         [Test]
@@ -54,7 +55,7 @@ namespace DOL.UnitTests.Gameserver.PropertyCalc
             int actual = StatCalculator.CalcValueFromBuffs(npc, eProperty.Constitution);
 
             int expected = 7;
-            Assert.AreEqual(expected, actual);
+            Assert.That(actual, Is.EqualTo(expected));
         }
 
         [Test]
@@ -62,7 +63,7 @@ namespace DOL.UnitTests.Gameserver.PropertyCalc
         {
             int actual = StatCalculator.CalcValueFromBuffs(null, eProperty.Constitution);
             
-            Assert.AreEqual(0, actual);
+            Assert.That(actual, Is.EqualTo(0));
         }
 
         [Test]
@@ -70,7 +71,7 @@ namespace DOL.UnitTests.Gameserver.PropertyCalc
         {
             int actual = StatCalculator.CalcValueFromItems(null, eProperty.Constitution);
 
-            Assert.AreEqual(0, actual);
+            Assert.That(actual, Is.EqualTo(0));
         }
 
         [Test]
@@ -83,7 +84,7 @@ namespace DOL.UnitTests.Gameserver.PropertyCalc
             int actual = StatCalculator.CalcValueFromItems(player, eProperty.Constitution);
 
             int expected = (int)(1.5 * 50);
-            Assert.AreEqual(expected, actual);
+            Assert.That(actual, Is.EqualTo(expected));
         }
 
         [Test]
@@ -97,20 +98,20 @@ namespace DOL.UnitTests.Gameserver.PropertyCalc
             int actual = StatCalculator.CalcValueFromItems(npc, stat);
 
             int expected = (int)(1.5 * 50);
-            Assert.AreEqual(expected, actual);
+            Assert.That(actual, Is.EqualTo(expected));
         }
 
         [Test]
-        public void CalcValueFromItems_IntelligenceOfLevel50AnimistWith50AcuityFromItems_50()
+        public void CalcValueFromItems_IntelligenceOfLevel50IntCasterWith50AcuityFromItems_50()
         {
             var player = NewPlayer();
-            player.fakeCharacterClass = new CharacterClassAnimist();
+            player.fakeCharacterClass = IntCaster;
             player.Level = 50;
             player.ItemBonus[eProperty.Acuity] = 50;
 
             int actual = StatCalculator.CalcValueFromItems(player, eProperty.Intelligence);
             
-            Assert.AreEqual(50, actual);
+            Assert.That(actual, Is.EqualTo(50));
         }
 
         [Test]
@@ -123,7 +124,7 @@ namespace DOL.UnitTests.Gameserver.PropertyCalc
 
             int actual = StatCalculator.CalcValueFromItems(player, eProperty.Constitution);
 
-            Assert.AreEqual(127, actual);
+            Assert.That(actual, Is.EqualTo(127));
         }
 
         [Test]
@@ -137,7 +138,7 @@ namespace DOL.UnitTests.Gameserver.PropertyCalc
 
             int actual = StatCalculator.CalcValueFromItems(player, eProperty.Constitution);
 
-            Assert.AreEqual(106, actual);
+            Assert.That(actual, Is.EqualTo(106));
         }
 
         [Test]
@@ -150,7 +151,7 @@ namespace DOL.UnitTests.Gameserver.PropertyCalc
             int actual = StatCalculator.GetItemBonusCapIncrease(player, eProperty.Constitution);
 
             int expected = (int)(50 / 2.0 + 1);
-            Assert.AreEqual(expected, actual);
+            Assert.That(actual, Is.EqualTo(expected));
         }
 
         [Test]
@@ -162,7 +163,7 @@ namespace DOL.UnitTests.Gameserver.PropertyCalc
 
             int actual = StatCalculator.GetItemBonusCapIncrease(player, eProperty.Constitution);
 
-            Assert.AreEqual(10, actual);
+            Assert.That(actual, Is.EqualTo(10));
         }
 
         [Test]
@@ -173,7 +174,7 @@ namespace DOL.UnitTests.Gameserver.PropertyCalc
 
             int actual = StatCalculator.GetMythicalItemBonusCapIncrease(player, eProperty.Constitution);
 
-            Assert.AreEqual(52, actual);
+            Assert.That(actual, Is.EqualTo(52));
         }
 
         [Test]
@@ -184,7 +185,7 @@ namespace DOL.UnitTests.Gameserver.PropertyCalc
 
             int actual = StatCalculator.GetMythicalItemBonusCapIncrease(player, eProperty.Constitution);
 
-            Assert.AreEqual(10, actual);
+            Assert.That(actual, Is.EqualTo(10));
         }
 
         [Test]
@@ -195,7 +196,7 @@ namespace DOL.UnitTests.Gameserver.PropertyCalc
 
             int actual = StatCalculator.CalcValue(npc, eProperty.Constitution);
 
-            Assert.AreEqual(100, actual);
+            Assert.That(actual, Is.EqualTo(100));
         }
 
         [Test]
@@ -206,20 +207,20 @@ namespace DOL.UnitTests.Gameserver.PropertyCalc
 
             int actual = StatCalculator.CalcValue(npc, eProperty.Intelligence);
 
-            Assert.AreEqual(100, actual);
+            Assert.That(actual, Is.EqualTo(100));
         }
 
         [Test]
-        public void CalcValue_GetIntelligenceFromLevel50AnimistWith50Acuity_50()
+        public void CalcValue_GetIntelligenceFromLevel50IntCasterWith50Acuity_50()
         {
             var player = NewPlayer();
-            player.fakeCharacterClass = new CharacterClassAnimist();
+            player.fakeCharacterClass = IntCaster;
             player.Level = 50;
             player.BaseBuffBonusCategory[(int)eProperty.Acuity] = 50;
 
             int actual = StatCalculator.CalcValue(player, eProperty.Intelligence);
 
-            Assert.AreEqual(50, actual);
+            Assert.That(actual, Is.EqualTo(50));
         }
 
         [Test]
@@ -230,7 +231,7 @@ namespace DOL.UnitTests.Gameserver.PropertyCalc
 
             int actual = StatCalculator.CalcValue(player, eProperty.Constitution);
 
-            Assert.AreEqual(200, actual);
+            Assert.That(actual, Is.EqualTo(200));
         }
 
         [Test]
@@ -241,7 +242,7 @@ namespace DOL.UnitTests.Gameserver.PropertyCalc
 
             int actual = StatCalculator.CalcValue(player, eProperty.Constitution);
 
-            Assert.AreEqual(1, actual);
+            Assert.That(actual, Is.EqualTo(1));
         }
 
         [Test]
@@ -253,7 +254,7 @@ namespace DOL.UnitTests.Gameserver.PropertyCalc
 
             int actual = StatCalculator.CalcValue(player, eProperty.Constitution);
 
-            Assert.AreEqual(200 - (50/2), actual);
+            Assert.That(actual, Is.EqualTo(200 - (50/2)));
         }
 
         [Test]
@@ -266,7 +267,7 @@ namespace DOL.UnitTests.Gameserver.PropertyCalc
 
             int actual = StatCalculator.CalcValue(player, eProperty.Constitution);
 
-            Assert.AreEqual(20, actual);
+            Assert.That(actual, Is.EqualTo(20));
         }
 
         [Test]
@@ -280,7 +281,7 @@ namespace DOL.UnitTests.Gameserver.PropertyCalc
             int actual = StatCalculator.CalcValue(player, eProperty.Constitution);
 
             int expected = 70 - (50 / 2);
-            Assert.AreEqual(expected, actual);
+            Assert.That(actual, Is.EqualTo(expected));
         }
 
         [Test]
@@ -294,7 +295,7 @@ namespace DOL.UnitTests.Gameserver.PropertyCalc
             int actual = StatCalculator.CalcValue(player, eProperty.Constitution);
 
             int expected = 70 - (50 / 2);
-            Assert.AreEqual(expected, actual);
+            Assert.That(actual, Is.EqualTo(expected));
         }
 
         [Test]
@@ -307,12 +308,14 @@ namespace DOL.UnitTests.Gameserver.PropertyCalc
 
             int actual = StatCalculator.CalcValue(player, eProperty.Constitution);
             
-            Assert.AreEqual(67, actual);
+            Assert.That(actual, Is.EqualTo(67));
         }
 
         public static StatCalculator StatCalculator => new StatCalculator();
 
         private static FakePlayer NewPlayer() => new FakePlayer();
+        private static CharacterClass IntCaster
+            => CharacterClass.Create(new DBCharacterClass() { ManaStat = (byte)eStat.INT });
         private static FakeNPC NewNPC() => new FakeNPC();
     }
 }

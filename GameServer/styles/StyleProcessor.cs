@@ -138,7 +138,7 @@ namespace DOL.GS.Styles
 							return false;
 
 						// get players angle on target
-                        float angle = target.GetAngle( living );
+                        var angle = target.GetAngleTo(living.Coordinate);
 						//player.Out.SendDebugMessage("Positional check: "+style.OpeningRequirementValue+" angle "+angle+" target heading="+target.Heading);						
 
 						switch ((Style.eOpeningPosition)style.OpeningRequirementValue)
@@ -146,17 +146,17 @@ namespace DOL.GS.Styles
 							//Back Styles
 							//60 degree since 1.62 patch
 							case Style.eOpeningPosition.Back:
-								if (!(angle >= 150 && angle < 210)) return false;
+								if (!(angle.InDegrees >= 150 && angle.InDegrees < 210)) return false;
 								break;
 							// Side Styles  
 							//105 degree since 1.62 patch
 							case Style.eOpeningPosition.Side:
-								if (!(angle >= 45 && angle < 150) && !(angle >= 210 && angle < 315)) return false;
+								if (!(angle.InDegrees >= 45 && angle.InDegrees < 150) && !(angle.InDegrees >= 210 && angle.InDegrees < 315)) return false;
 								break;
 							// Front Styles
 							// 90 degree
 							case Style.eOpeningPosition.Front:
-								if (!(angle >= 315 || angle < 45)) return false;
+								if (!(angle.InDegrees >= 315 || angle.InDegrees < 45)) return false;
 								break;
 						}
 						//DOLConsole.WriteLine("Positional check success: "+style.OpeningRequirementValue);
@@ -407,7 +407,9 @@ namespace DOL.GS.Styles
 					//Growth * Style Spec * Effective Speed / Unstyled Damage Cap
 
 					bool staticGrowth = attackData.Style.StealthRequirement;  //static growth is not a function of (effective) weapon speed
-					double absorbRatio = attackData.Damage / living.UnstyledDamageCap(weapon); //scaling factor for style damage
+					double absorbRatio = 0;
+					if (weapon.DPS_AF >= 15) absorbRatio = attackData.Damage / living.UnstyledDamageCap(weapon);
+
 					double effectiveWeaponSpeed = living.AttackSpeed(weapon) * 0.001;
 					double styleGrowth = Math.Max(0,attackData.Style.GrowthOffset + attackData.Style.GrowthRate * living.GetModifiedSpecLevel(attackData.Style.Spec));
 					double styleDamageBonus = living.GetModified(eProperty.StyleDamage) * 0.01 - 1;
@@ -420,8 +422,7 @@ namespace DOL.GS.Styles
 						}
 						attackData.StyleDamage = (int)(absorbRatio * styleGrowth * ServerProperties.Properties.CS_OPENING_EFFECTIVENESS);
 					}
-					else
-						attackData.StyleDamage = (int)(absorbRatio * styleGrowth * effectiveWeaponSpeed);
+					else attackData.StyleDamage = (int)(absorbRatio * styleGrowth * effectiveWeaponSpeed);
 
 					attackData.StyleDamage += (int)(attackData.Damage * styleDamageBonus);
 
